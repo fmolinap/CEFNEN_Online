@@ -1,0 +1,8 @@
+Fecha y Hora,Campaña,Tipo de Incidencia,Archivo DLT,Responsable de Turno,Descripcion de Incidencia,Archivo Grafico 1,Archivo Grafico 2,Archivo Grafico 3,Archivo Grafico 4
+2024-07-15 10:25:30,Test4det,Inicio de Turno,240612_Test4det.dlt,Francisco Molina,Esta es una gran prueba AHORA Prueba de la Prueba,,,,
+2024-07-15 10:25:14,Test4det,Inicio de Turno,240612_Test4det.dlt,Francisco Molina,Esta es una gran prueba TEST DE EDITAR INCIDENCIA DE NUEVO TEST3,,,,
+2024-07-15 10:20:34,Test4det,Inicio de Campaña,No DLT,Francisco Molina,No hay incidencias AHORA REVISAR SE CAMPBIO,,,,
+2024-07-15 11:05:50,Test4det,Inicio de Campaña,No DLT,Francisco Molina,CAMBIO ACEPTADO Y ESPERO QUE CON LA MISMA HORA 10:20:34,,,,
+2024-07-15 12:11:47,Test4det,Problemas de Ruido,,Francisco Molina,Hay Ruido en detector 2. Parece que ya no,,/Users/franciscomolina/Documents/Cefnen_online/v2/Graficos/Noise_analysis/20240714_193743_NoiseAnalysis_Test4det_Detector2.png,/Users/franciscomolina/Documents/Cefnen_online/v2/Graficos/Noise_analysis/20240714_193743_NoiseAnalysis_Test4det_Detector2.png,
+2024-07-15 14:31:21,Test4det,Problemas Eléctricos,240612.dlt,Francisco Molina,Se quemo todo,/Users/franciscomolina/Documents/Cefnen_online/v2/Graficos/Noise_analysis/20240714_193743_NoiseAnalysis_Test4det_Detector2.png,,,
+2024-09-20 19:51:25,Test4det,Problemas de Adquisición Hardware,,Francisco Molina,gfsdfgfdsssfdsfd,,,,

@@ -1,0 +1,2 @@
+timestamp,detector_1_total_counts,detector_1_neutron_counts,detector_2_total_counts,detector_2_neutron_counts,detector_3_total_counts,detector_3_neutron_counts,detector_4_total_counts,detector_4_neutron_counts,detector_5_total_counts,detector_5_neutron_counts,dlt_file,observations
+2024-07-16 18:32:45,100,1,100,10,100,1,100,2,100,20,24_test.dlt,Sin Observaciones

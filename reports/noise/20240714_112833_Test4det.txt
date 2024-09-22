@@ -1,0 +1,4 @@
+Detector 1: -1.47%
+**Detector 2: -18.89%**
+**Detector 3: 33.16%**
+Detector 4: -0.16%
