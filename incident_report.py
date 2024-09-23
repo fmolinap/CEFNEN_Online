@@ -226,7 +226,7 @@ class IncidentReport(QWidget):
         item, ok = QInputDialog.getItem(
             self, "Editar Incidencia", "Seleccionar Incidencia para Editar:", incident_list.tolist(), 0, False
         )
-        if not ok:
+        if not ok or not item:
             return
 
         selected_datetime = item.split(" - ")[0]
@@ -235,7 +235,13 @@ class IncidentReport(QWidget):
         # Cargar datos en el formulario
         self.timestamp_value.setText(incident_data["Fecha y Hora"])
         self.incident_type.setCurrentText(incident_data["Tipo de Incidencia"])
-        self.dlt_file.setText(incident_data["Archivo DLT"])
+
+        # **Corrección: Convertir Archivo DLT a cadena si es necesario**
+        dlt_value = incident_data["Archivo DLT"]
+        if not isinstance(dlt_value, str):
+            dlt_value = str(dlt_value)
+        self.dlt_file.setText(dlt_value)
+
         self.responsible_person.setCurrentText(incident_data["Responsable de Turno"])
         self.incident_description.setText(incident_data["Descripcion de Incidencia"])
         self.graph_files = []

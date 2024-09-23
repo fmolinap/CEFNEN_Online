@@ -10,7 +10,7 @@ from calibrate import Calibrate
 from plot_cr_evo import PlotCREvo
 from plot_comparison import PlotComparison
 from noise_analysis import NoiseAnalysis
-from calibration_root import Calibration
+from calibration_root import CalibrationRoot
 from recalibrate_root import RecalibrateRoot
 from fetch_root_files import FetchRootFiles
 from fetch_dlt_files import FetchDLTFiles
@@ -236,7 +236,7 @@ class MainApp(QMainWindow):
 
     def open_calibration_from_root(self):
         self.clear_central_widget()
-        calibration_widget = Calibration(back_callback=self.create_main_window)
+        calibration_widget = CalibrationRoot(back_callback=self.create_main_window)
         self.setCentralWidget(calibration_widget)
 
     def open_recalibrate_root(self):
