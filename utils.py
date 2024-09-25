@@ -1,6 +1,9 @@
+# utils.py
+
 import os
 import pandas as pd
 from PySide6.QtWidgets import QMessageBox
+import paramiko
 
 def get_existing_campaigns():
     info_file = "./data/info_campaigns.csv"
@@ -91,3 +94,42 @@ def save_detector_data(short_name, data_entries, new_dlt, observations, back_cal
     QMessageBox.information(None, "Info", "Datos de la campaña guardados con éxito.")
     if back_callback:
         back_callback()
+
+def get_remote_root_files(ip, remote_path, username, password):
+    """
+    Conecta al PC remoto vía SSH, lista los archivos .root en la ruta especificada y devuelve la lista.
+
+    :param ip: Dirección IP del PC remoto.
+    :param remote_path: Ruta remota donde buscar archivos .root.
+    :param username: Nombre de usuario para la conexión SSH.
+    :param password: Contraseña para la conexión SSH.
+    :return: Lista de nombres de archivos .root.
+    :raises: Exception con mensaje de error adecuado si falla la conexión o la operación.
+    """
+    try:
+        # Establecer conexión SSH
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=ip, username=username, password=password)
+
+        # Abrir una sesión SFTP
+        sftp = ssh.open_sftp()
+
+        # Listar archivos en la ruta remota
+        files = sftp.listdir(remote_path)
+        root_files = [f for f in files if f.endswith('.root')]
+
+        # Cerrar conexiones
+        sftp.close()
+        ssh.close()
+
+        return root_files
+
+    except paramiko.AuthenticationException:
+        raise Exception("Autenticación fallida. Verifica tu usuario y contraseña.")
+    except paramiko.SSHException as sshException:
+        raise Exception(f"Error al establecer conexión SSH: {sshException}")
+    except FileNotFoundError:
+        raise Exception(f"La ruta remota '{remote_path}' no existe.")
+    except Exception as e:
+        raise Exception(f"Ocurrió un error inesperado: {e}")

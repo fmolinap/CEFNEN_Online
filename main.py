@@ -1,3 +1,5 @@
+# main.py
+
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
     QFrame, QGroupBox, QSizePolicy, QGridLayout
@@ -15,9 +17,9 @@ from recalibrate_root import RecalibrateRoot
 from fetch_root_files import FetchRootFiles
 from fetch_dlt_files import FetchDLTFiles
 from lookuptable_setup import LookUpTableSetup
-from edit_materials import EditMaterials
+#from edit_materials import EditMaterials
 from incident_report import IncidentReport
-
+from reporte_fin_de_campagna import ReporteFinCampagnaWindow  
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -68,8 +70,8 @@ class MainApp(QMainWindow):
         # Subtítulo
         subtitle_label = QLabel(
             "Este es el programa de análisis online de las campañas experimentales de CEFNEN. "
-            "Ha sido desarrollado en Julio de 2024 para facilitar el análisis online de los datos "
-            "de la 5ta Campaña."
+            "Ha sido desarrollado en  2024 para facilitar el análisis online de los datos "
+            "de las Campañas en terreno."
         )
         subtitle_label.setWordWrap(True)
         subtitle_label.setAlignment(Qt.AlignCenter)
@@ -127,7 +129,7 @@ class MainApp(QMainWindow):
         btn_fetch_dlt.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_fetch_dlt)
 
-        btn_incident_report = QPushButton("Reporte de Incidencias")
+        btn_incident_report = QPushButton("Bitácora de Campaña")
         btn_incident_report.clicked.connect(self.open_incident_report)
         btn_incident_report.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_incident_report)
@@ -137,10 +139,16 @@ class MainApp(QMainWindow):
         btn_lookup_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_lookup_table)
 
-        btn_edit_materials = QPushButton("Editar Materiales en Campaña")
-        btn_edit_materials.clicked.connect(self.open_edit_materials)
-        btn_edit_materials.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        layout.addWidget(btn_edit_materials)
+        #btn_edit_materials = QPushButton("Editar Materiales en Campaña")
+        #btn_edit_materials.clicked.connect(self.open_edit_materials)
+        #btn_edit_materials.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        #layout.addWidget(btn_edit_materials)
+
+        
+        btn_generate_report = QPushButton("Generar Reporte Fin de Campaña")
+        btn_generate_report.clicked.connect(self.open_generate_report)
+        btn_generate_report.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_generate_report)
 
         layout.addStretch()  # Agregar estiramiento para empujar los botones hacia arriba
 
@@ -214,10 +222,10 @@ class MainApp(QMainWindow):
         lookup_table_setup = LookUpTableSetup(back_callback=self.create_main_window)
         self.setCentralWidget(lookup_table_setup)
 
-    def open_edit_materials(self):
-        self.clear_central_widget()
-        edit_materials = EditMaterials(back_callback=self.create_main_window)
-        self.setCentralWidget(edit_materials)
+    #def open_edit_materials(self):
+    #    self.clear_central_widget()
+    #    edit_materials = EditMaterials(back_callback=self.create_main_window)
+    #    self.setCentralWidget(edit_materials)
 
     def open_plot_cr_evo(self):
         self.clear_central_widget()
@@ -248,6 +256,11 @@ class MainApp(QMainWindow):
         self.clear_central_widget()
         noise_analysis = NoiseAnalysis(back_callback=self.create_main_window)
         self.setCentralWidget(noise_analysis)
+
+    def open_generate_report(self):
+        self.clear_central_widget()
+        reporte_window = ReporteFinCampagnaWindow(back_callback=self.create_main_window)
+        self.setCentralWidget(reporte_window)
 
     def clear_central_widget(self):
         # Elimina el widget central actual

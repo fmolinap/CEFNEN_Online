@@ -1,0 +1,5 @@
+Fecha y Hora,Campaña,Tipo de Incidencia,Archivo DLT,Responsable de Turno,Descripcion de Incidencia,Archivo Grafico 1,Archivo Grafico 2,Archivo Grafico 3,Archivo Grafico 4
+2024-09-24 10:59,Prueba_125MSPS_4det,Cambio en Lookup Table,,Franco Lopez,Se agrego una nueva look up table cambiando de posicion el detector 1,/Users/franciscomolina/Documents/Cefnen_online/new_online/CEFNEN_Online_v1/Graficos/Lookuptable/Prueba_125MSPS_4det/Distribucion_20240924_105851_Prueba_125MSPS_4det.png,,,
+2024-09-24 11:05,Prueba_125MSPS_4det,Cambio en Lookup Table,,Francisco Molina,Se cambio cable por el cable largo en detector 1.,/Users/franciscomolina/Documents/Cefnen_online/new_online/CEFNEN_Online_v1/Graficos/Lookuptable/Prueba_125MSPS_4det/Distribucion_20240924_110531_Prueba_125MSPS_4det.png,,,
+2024-09-24 11:30,Prueba_125MSPS_4det,Cambio en Lookup Table,,Jaime Romero,Cambiamos un detector de posicion,/Users/franciscomolina/Documents/Cefnen_online/new_online/CEFNEN_Online_v1/Graficos/Lookuptable/Prueba_125MSPS_4det/Distribucion_20240924_113021_Prueba_125MSPS_4det.png,,,
+2024-09-24 16:25,Prueba_125MSPS_4det,Problemas de Ruido,,Francisco Molina,hola ariel,,,,

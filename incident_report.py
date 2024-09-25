@@ -21,7 +21,7 @@ class IncidentReport(QWidget):
         main_layout.setAlignment(Qt.AlignTop)
 
         # Título
-        title_label = QLabel("Reporte de Incidencias")
+        title_label = QLabel("Bitacora de Campaña y Reporte de Incidencias")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         main_layout.addWidget(title_label)
@@ -33,7 +33,7 @@ class IncidentReport(QWidget):
         # Fecha y Hora
         timestamp_layout = QHBoxLayout()
         timestamp_label = QLabel("Fecha y Hora:")
-        self.timestamp_value = QLabel(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.timestamp_value = QLabel(datetime.now().strftime("%Y-%m-%d %H:%M"))
         timestamp_layout.addWidget(timestamp_label)
         timestamp_layout.addWidget(self.timestamp_value)
         form_layout.addLayout(timestamp_layout)
@@ -83,14 +83,14 @@ class IncidentReport(QWidget):
         form_layout.addLayout(responsible_layout)
 
         # Descripción de la Incidencia
-        description_label = QLabel("Escribir el Incidente aquí:")
+        description_label = QLabel("Escribir texto aquí:")
         form_layout.addWidget(description_label)
         self.incident_description = QTextEdit()
         form_layout.addWidget(self.incident_description)
 
         # Agregar Gráficos
         self.graph_files = []
-        add_graph_button = QPushButton("Agregar Gráfico")
+        add_graph_button = QPushButton("Agregar Gráficos")
         add_graph_button.clicked.connect(self.add_graph)
         form_layout.addWidget(add_graph_button)
 
@@ -99,12 +99,12 @@ class IncidentReport(QWidget):
 
         # Botones de acción
         buttons_layout = QHBoxLayout()
-        save_button = QPushButton("Guardar Incidencia")
+        save_button = QPushButton("Guardar en Bitácora")
         save_button.setStyleSheet("background-color: #4CAF50; color: white;")
         save_button.clicked.connect(self.save_incident)
         buttons_layout.addWidget(save_button)
 
-        edit_button = QPushButton("Editar Incidencia")
+        edit_button = QPushButton("Editar una Entrada Anterior")
         edit_button.setStyleSheet("background-color: #2196F3; color: white;")
         edit_button.clicked.connect(self.edit_incident)
         buttons_layout.addWidget(edit_button)
@@ -117,7 +117,7 @@ class IncidentReport(QWidget):
         form_layout.addLayout(buttons_layout)
 
         # Últimas Incidencias
-        incidents_label = QLabel("Últimas Incidencias:")
+        incidents_label = QLabel("Últimas Entradas en Bitácora:")
         incidents_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         main_layout.addWidget(incidents_label)
 
@@ -151,7 +151,7 @@ class IncidentReport(QWidget):
     def add_graph(self):
         graph_type, ok = QInputDialog.getItem(
             self, "Seleccionar Tipo de Gráfico", "Tipo de Gráfico:",
-            ["Plot Counting Rate", "Plot Comparison", "Análisis de Ruido"], 0, False
+            ["Plot Counting Rate", "Plot Comparison", "Análisis de Ruido", "Nueva LookUpTable"], 0, False
         )
         if not ok:
             return
@@ -161,6 +161,8 @@ class IncidentReport(QWidget):
             directory = f"./Graficos/{campaign}"
         elif graph_type == "Plot Comparison":
             directory = "./Graficos/Comparison"
+        elif graph_type == "Nueva LookUpTable":
+            directory = "./Graficos/Lookuptable"
         else:
             directory = f"./Graficos/NoiseAnalysis/{campaign}"
 
@@ -205,7 +207,7 @@ class IncidentReport(QWidget):
         df_incidents = pd.concat([df_incidents, pd.DataFrame([new_incident])], ignore_index=True)
 
         df_incidents.to_csv(file_name, index=False)
-        QMessageBox.information(self, "Información", "Incidencia guardada correctamente.")
+        QMessageBox.information(self, "Información", "IEntrada en Bitácora guardada correctamente.")
         self.load_incidents()
         self.clear_form()
 
@@ -215,7 +217,7 @@ class IncidentReport(QWidget):
         file_name = f"{directory}/Incidencias_{campaign}.csv"
 
         if not os.path.exists(file_name):
-            QMessageBox.critical(self, "Error", "No hay incidencias para editar.")
+            QMessageBox.critical(self, "Error", "No hay entradas para editar.")
             return
 
         df_incidents = pd.read_csv(file_name)
@@ -269,7 +271,7 @@ class IncidentReport(QWidget):
                 self.incident_list.addItem(list_item)
 
     def clear_form(self):
-        self.timestamp_value.setText(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        self.timestamp_value.setText(datetime.now().strftime("%Y-%m-%d %H:%M"))
         self.incident_type.setCurrentIndex(0)
         self.dlt_file.clear()
         self.responsible_person.setCurrentIndex(0)

@@ -1,0 +1,5 @@
+Contador Proporcional (Numero/tipo/diametro/largo/marca),Preamplificador (Numero/modelo),Alto Voltaje (Modulo/Canal),Digitalizador (Modelo/Canal),Moderador (Geometria/Material/diametro-lado),Set Cables (numero o detalle),Posición
+01/He-3/1inch/39cm/Consensus,02/UPC,01-R1470-8Ch,03/SIS3316-250,Caja/grafito/20cm,1x3,"(2,2)"
+04/He-3/1inch/39cm/Consensus,03/UPC,03-R1470-8Ch,02/SIS3316-250,Naked,2x3,"(1,4)"
+06/He-3/1inch/39cm/Consensus,04/UPC,01-R1470-4Ch,06/SIS3316-250,Caja/Polietileno/4cm,4x3,"(3,1)"
+07/He-3/1inch/39cm/Consensus,05/UPC,04-R1470-8Ch,13/SIS3316-250,Caja/Polietileno/20cm,8x3,"(5,2)"

@@ -1,0 +1,98 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tocloft}
+
+\geometry{a4paper, margin=1in}
+
+\title{Reporte de Fin de Campaña {{ campaign_name }}}
+\author{CEFNEN}
+\date{Fecha de Generación: {{ generation_date }}}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Información General de la Campaña}
+\begin{itemize}
+    \item \textbf{Fecha de Inicio:} {{ campaign_info.fecha_inicio }}
+    \item \textbf{Fecha de Término:} {{ campaign_info.fecha_termino }}
+    \item \textbf{Lugar:} {{ campaign_info.lugar }}
+    \item \textbf{Número de Detectores:} {{ campaign_info.num_detectores }}
+    \item \textbf{DLT Path:} {{ campaign_info.dlt_path }}
+    \item \textbf{ROOT Path:} {{ campaign_info.root_path }}
+\end{itemize}
+
+\section{LookUpTable y Distribución de Detectores}
+\subsection{LookUpTable}
+\begin{tabular}{|{% for col in lookup_columns %}c|{% endfor %}}
+\hline
+{% for col in lookup_columns %}
+{{ col }} & 
+{% endfor %}
+\\ \hline
+{% for row in lookup_data %}
+{% for item in row %}
+{{ item }} & 
+{% endfor %}
+\\ \hline
+{% endfor %}
+\end{tabular}
+
+\subsection{Distribución de Detectores}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{{{ distribution_image_path }}}
+    \caption{Distribución de Detectores}
+\end{figure}
+
+\section{Incidencias}
+{% for incidencia in incidencias %}
+\subsection*{- {{ incidencia.fecha }}: {{ incidencia.tipo }}}
+\begin{itemize}
+    \item \textbf{Descripción:} {{ incidencia.descripcion }}
+    \item \textbf{Responsable de Turno:} {{ incidencia.responsable }}
+\end{itemize}
+
+{% if incidencia.graficos %}
+    {% for grafico in incidencia.graficos %}
+    \begin{figure}[h!]
+        \centering
+        \includegraphics[width=\textwidth]{{{ grafico }}}
+    \end{figure}
+    {% endfor %}
+{% endif %}
+{% endfor %}
+
+\section{Reportes de Ruido}
+{% for reporte in reportes_ruido %}
+\subsection*{- Reporte: {{ reporte.nombre }}}
+{{ reporte.contenido }}
+
+{% endfor %}
+
+\section{Calibraciones}
+{% for calibracion in calibraciones %}
+\subsection*{Archivo de Calibración: {{ calibracion.nombre }}}
+\begin{tabular}{|{% for col in calibracion.columns %}c|{% endfor %}}
+\hline
+{% for col in calibracion.columns %}
+{{ col }} & 
+{% endfor %}
+\\ \hline
+{% for row in calibracion.data %}
+{% for item in row %}
+{{ item }} & 
+{% endfor %}
+\\ \hline
+{% endfor %}
+\end{tabular}
+
+{% endfor %}
+
+\end{document}
