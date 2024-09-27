@@ -17,23 +17,27 @@ class RsyncThread(QThread):
         self.rsync_command = rsync_command
 
     def run(self):
-        process = subprocess.Popen(
-            self.rsync_command, shell=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
-        while True:
-            output = process.stdout.readline()
-            if output:
-                self.progress_signal.emit(output.strip())
-            elif process.poll() is not None:
-                break
+        try:
+            process = subprocess.Popen(
+                self.rsync_command, shell=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+            while True:
+                output = process.stdout.readline()
+                if output:
+                    self.progress_signal.emit(output.strip())
+                elif process.poll() is not None:
+                    break
 
-        stderr = process.stderr.read()
-        if process.returncode == 0:
-            self.finished_signal.emit(True)
-        else:
-            self.error_signal.emit(stderr)
+            stderr = process.stderr.read()
+            if process.returncode == 0:
+                self.finished_signal.emit(True)
+            else:
+                self.error_signal.emit(stderr)
+                self.finished_signal.emit(False)
+        except Exception as e:
+            self.error_signal.emit(str(e))
             self.finished_signal.emit(False)
 
 class FetchRootFiles(QWidget):
@@ -76,15 +80,16 @@ class FetchRootFiles(QWidget):
         buttons_layout = QHBoxLayout()
         main_layout.addLayout(buttons_layout)
 
-        fetch_button = QPushButton("Traer Archivos ROOT")
-        fetch_button.setStyleSheet("background-color: #4CAF50; color: white;")
-        fetch_button.clicked.connect(self.fetch_root_files)
-        buttons_layout.addWidget(fetch_button)
+        # Asignar los botones a atributos de la clase
+        self.fetch_button = QPushButton("Traer Archivos ROOT")
+        self.fetch_button.setStyleSheet("background-color: #4CAF50; color: white;")
+        self.fetch_button.clicked.connect(self.fetch_root_files)
+        buttons_layout.addWidget(self.fetch_button)
 
-        back_button = QPushButton("Regresar")
-        back_button.setStyleSheet("background-color: #f44336; color: white;")
-        back_button.clicked.connect(self.back)
-        buttons_layout.addWidget(back_button)
+        self.back_button = QPushButton("Regresar")
+        self.back_button.setStyleSheet("background-color: #f44336; color: white;")
+        self.back_button.clicked.connect(self.back)
+        buttons_layout.addWidget(self.back_button)
 
         # Área de progreso
         progress_label = QLabel("Progreso de la transferencia:")
@@ -164,13 +169,18 @@ class FetchRootFiles(QWidget):
         local_path = f"./rootonline/{campaign}"
         os.makedirs(local_path, exist_ok=True)
 
-        rsync_command = f"sshpass -p '{password}' rsync -avz -e 'ssh -p {port}' {user}@{ip}:{remote_path}/*.root {local_path}"
-
+                
+        # Comando rsync sin comodines y con preservación de timestamps
+        rsync_command = ( 
+            f"sshpass -p '{password}' rsync -avz -e 'ssh -p {port}' "
+            f"{user}@{ip}:{remote_path}/ {local_path}"
+        )
+        
         self.progress_text.append("Iniciando transferencia de archivos ROOT...\n")
 
         # Deshabilitar botones durante la transferencia
-        self.findChild(QPushButton, "Traer Archivos ROOT").setEnabled(False)
-        self.findChild(QPushButton, "Regresar").setEnabled(False)
+        self.fetch_button.setEnabled(False)
+        self.back_button.setEnabled(False)
 
         # Crear y ejecutar el hilo de rsync
         self.rsync_thread = RsyncThread(rsync_command)
@@ -184,8 +194,11 @@ class FetchRootFiles(QWidget):
         self.progress_text.ensureCursorVisible()
         # Actualizar la barra de progreso (esto es una simplificación)
         if "%" in text:
-            percent = int(text.strip().split('%')[0])
-            self.progress_bar.setValue(percent)
+            try:
+                percent = int(text.strip().split('%')[0])
+                self.progress_bar.setValue(percent)
+            except ValueError:
+                pass  # Ignorar líneas que no contienen un porcentaje válido
 
     def show_error(self, error_text):
         self.progress_text.append(f"\nError: {error_text}\n")
@@ -199,8 +212,8 @@ class FetchRootFiles(QWidget):
             QMessageBox.critical(self, "Error", "La transferencia de archivos ha fallado.")
 
         # Habilitar botones después de la transferencia
-        self.findChild(QPushButton, "Traer Archivos ROOT").setEnabled(True)
-        self.findChild(QPushButton, "Regresar").setEnabled(True)
+        self.fetch_button.setEnabled(True)
+        self.back_button.setEnabled(True)
         self.progress_bar.setValue(0)
 
     def get_remote_path(self, campaign):
