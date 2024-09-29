@@ -1,17 +1,18 @@
+# calibration_root.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QLineEdit, QVBoxLayout, QHBoxLayout,
     QApplication, QMessageBox, QComboBox, QTextEdit, QGridLayout, QFileDialog,
-    QDialog, QDialogButtonBox, QFormLayout
+    QDialog, QDialogButtonBox, QFormLayout, QScrollArea
 )
 from PySide6.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib.widgets import Cursor  # Asegúrate de importar Cursor
+from matplotlib.widgets import Cursor
 import pandas as pd
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor  # Repetido, puedes eliminar uno de ellos
 import ROOT
 ROOT.gROOT.SetBatch(True)
 from utils import get_existing_campaigns, get_num_detectors
@@ -105,7 +106,14 @@ class CalibrationRoot(QWidget):
         """)
 
     def browse_root_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo ROOT", "", "ROOT files (*.root)")
+        short_name = self.selected_campaign.currentText()
+        if not short_name:
+            QMessageBox.critical(self, "Error", "Debe seleccionar una campaña.")
+            return
+        initial_dir = os.path.abspath(os.path.join(".", "rootonline", short_name))
+        if not os.path.exists(initial_dir):
+            os.makedirs(initial_dir, exist_ok=True)
+        file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo ROOT", initial_dir, "ROOT files (*.root)")
         if file_path:
             self.root_path.setText(file_path)
 
@@ -116,10 +124,18 @@ class CalibrationRoot(QWidget):
             return
 
         self.root_file = ROOT.TFile(file_path)
-        self.histograms = {key.GetName(): self.root_file.Get(key.GetName()) for key in self.root_file.GetListOfKeys() if key.GetName().endswith("_EFIR")}
+        # Solo incluir histogramas que terminan con '_EFIR' y ciclo 1
+        self.histograms = {}
+        for key in self.root_file.GetListOfKeys():
+            hist_name = key.GetName()
+            cycle = key.GetCycle()
+            if hist_name.endswith('_EFIR') and cycle == 1:
+                obj = key.ReadObj()
+                if isinstance(obj, ROOT.TH1):
+                    self.histograms[hist_name] = obj
 
         if not self.histograms:
-            QMessageBox.critical(self, "Error", "No se encontraron histogramas con terminación '_EFIR' en el archivo ROOT.")
+            QMessageBox.critical(self, "Error", "No se encontraron histogramas que terminen con '_EFIR' en el archivo ROOT.")
             return
 
         self.show_mapping_interface()
@@ -128,6 +144,7 @@ class CalibrationRoot(QWidget):
         # Almacenar el nombre de la campaña seleccionada antes de limpiar el layout
         self.selected_campaign_name = self.selected_campaign.currentText()
 
+        # Limpiar el layout principal
         self.clear_layout(self.main_layout)
 
         mapping_label = QLabel("Mapeo de Histogramas a Detectores")
@@ -135,27 +152,49 @@ class CalibrationRoot(QWidget):
         mapping_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         self.main_layout.addWidget(mapping_label)
 
-        mapping_layout = QGridLayout()
+        # Crear un área de scroll para el mapeo
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        mapping_widget = QWidget()
+        mapping_layout = QGridLayout(mapping_widget)
+        scroll_area.setWidget(mapping_widget)
+        self.main_layout.addWidget(scroll_area)
+
         num_detectors = get_num_detectors(self.selected_campaign_name)
         self.detector_map = {}
 
-        for i in range(num_detectors):
-            detector_label = QLabel(f"Detector {i + 1}")
-            hist_name_combo = QComboBox()
-            hist_name_combo.addItems(self.histograms.keys())
-            mapping_layout.addWidget(detector_label, i, 0)
-            mapping_layout.addWidget(hist_name_combo, i, 1)
-            self.detector_map[i] = hist_name_combo
-
-        self.main_layout.addLayout(mapping_layout)
+        # Verificar si existe un mapeo guardado
+        mapping_file = f"./mapeo_efir/{self.selected_campaign_name}/Mapeo_histogramas_{self.selected_campaign_name}_efir.csv"
+        if os.path.exists(mapping_file):
+            df_mapping = pd.read_csv(mapping_file)
+            for i in range(num_detectors):
+                detector_label = QLabel(f"Detector {i + 1}")
+                hist_name_combo = QComboBox()
+                hist_name_combo.addItems(self.histograms.keys())
+                hist_name = df_mapping.loc[df_mapping['Detector'] == f'Detector_{i+1}', 'Histograma'].values[0]
+                hist_name_combo.setCurrentText(hist_name)
+                mapping_layout.addWidget(detector_label, i, 0)
+                mapping_layout.addWidget(hist_name_combo, i, 1)
+                self.detector_map[i] = hist_name_combo
+        else:
+            for i in range(num_detectors):
+                detector_label = QLabel(f"Detector {i + 1}")
+                hist_name_combo = QComboBox()
+                hist_name_combo.addItems(self.histograms.keys())
+                mapping_layout.addWidget(detector_label, i, 0)
+                mapping_layout.addWidget(hist_name_combo, i, 1)
+                self.detector_map[i] = hist_name_combo
 
         # Botones
         buttons_layout = QHBoxLayout()
-        accept_button = QPushButton("Aceptar Mapeo")
-        accept_button.clicked.connect(self.start_calibration_sequence)
+        save_mapping_button = QPushButton("Guardar Mapeo")
+        save_mapping_button.clicked.connect(self.save_mapping)
+        accept_mapping_button = QPushButton("Aceptar Mapeo")
+        accept_mapping_button.clicked.connect(self.start_calibration_sequence)
         back_button = QPushButton("Regresar")
         back_button.clicked.connect(self.back)
-        buttons_layout.addWidget(accept_button)
+        buttons_layout.addWidget(save_mapping_button)
+        buttons_layout.addWidget(accept_mapping_button)
         buttons_layout.addWidget(back_button)
         self.main_layout.addLayout(buttons_layout)
 
@@ -163,6 +202,23 @@ class CalibrationRoot(QWidget):
         self.result_text = QTextEdit()
         self.result_text.setReadOnly(True)
         self.main_layout.addWidget(self.result_text)
+
+    def save_mapping(self):
+        # Guardar el mapeo en un archivo CSV
+        mapping_data = []
+        for i in range(len(self.detector_map)):
+            hist_name = self.detector_map[i].currentText()
+            mapping_data.append({
+                'Detector': f'Detector_{i+1}',
+                'Histograma': hist_name
+            })
+
+        df_mapping = pd.DataFrame(mapping_data)
+        save_dir = f"./mapeo_efir/{self.selected_campaign_name}"
+        os.makedirs(save_dir, exist_ok=True)
+        mapping_file = f"{save_dir}/Mapeo_histogramas_{self.selected_campaign_name}_efir.csv"
+        df_mapping.to_csv(mapping_file, index=False)
+        QMessageBox.information(self, "Éxito", f"Mapeo guardado en {mapping_file}")
 
     def start_calibration_sequence(self):
         self.detector_index = 0
@@ -204,7 +260,7 @@ class CalibrationRoot(QWidget):
         canvas.axes.set_xlabel('Canal')
         canvas.axes.set_ylabel('Cuentas')
         canvas.axes.legend()
-        cursor = Cursor(canvas.axes, useblit=True, color='red', linewidth=1)  # Asegúrate de que 'Cursor' está importado
+        cursor = Cursor(canvas.axes, useblit=True, color='red', linewidth=1)
         layout.addWidget(canvas)
 
         # Botones de Zoom
@@ -355,11 +411,3 @@ class CalibrationRoot(QWidget):
             self.back_callback()
         else:
             self.close()
-
-
-if __name__ == "__main__":
-    import sys
-    app = QApplication(sys.argv)
-    window = CalibrationRoot()
-    window.show()
-    sys.exit(app.exec())

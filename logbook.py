@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 import paramiko
 import ROOT
+import sys
 import subprocess  # Para abrir carpetas
 ROOT.gROOT.SetBatch(True)
 from utils import (
@@ -301,7 +302,6 @@ class Logbook(QWidget):
         # Por ejemplo, podrías actualizar los desplegables si hay cambios
         pass
 
-# Clase AddDataToCampaign integrada dentro de logbook.py
 class AddDataToCampaign(QWidget):
     def __init__(self, back_callback, main_stack, refresh_callback, show_dataframe_dialog):
         super().__init__()
@@ -487,10 +487,14 @@ class AddDataToCampaign(QWidget):
 
             # Abrir la carpeta en el explorador de archivos
             try:
-                if os.name == 'nt':  # Windows
-                    os.startfile(os.path.abspath(target_folder))
-                elif os.name == 'posix':  # macOS o Linux
+                if sys.platform.startswith('darwin'):  # macOS
+                    subprocess.call(['open', os.path.abspath(target_folder)])
+                elif sys.platform.startswith('linux'):  # Linux
                     subprocess.call(['xdg-open', os.path.abspath(target_folder)])
+                elif sys.platform.startswith('win'):  # Windows
+                    os.startfile(os.path.abspath(target_folder))
+                else:
+                    QMessageBox.warning(self, "Advertencia", "Sistema operativo no soportado para abrir la carpeta automáticamente.")
             except Exception as e:
                 QMessageBox.warning(self, "Advertencia", f"No se pudo abrir la carpeta: {e}")
 
@@ -631,351 +635,13 @@ class AddDataToCampaign(QWidget):
         new_df = pd.concat([existing_df, pd.DataFrame([new_data])], ignore_index=True)
         new_df.to_csv(campaign_file, index=False)
 
-    def show_dataframe_dialog(self, df):
-        # Implementación de un diálogo para mostrar el DataFrame
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Datos de la Campaña")
-        layout = QVBoxLayout()
-        table = QTableWidget()
-        table.setRowCount(df.shape[0])
-        table.setColumnCount(df.shape[1])
-        table.setHorizontalHeaderLabels(df.columns.tolist())
-        for i in range(df.shape[0]):
-            for j in range(df.shape[1]):
-                table.setItem(i, j, QTableWidgetItem(str(df.iat[i, j])))
-        table.resizeColumnsToContents()
-        layout.addWidget(table)
-        dialog.setLayout(layout)
-        dialog.exec()
-
-class AddDataToCampaign(QWidget):
-    def __init__(self, back_callback, main_stack, refresh_callback, show_dataframe_dialog):
-        super().__init__()
-        self.back_callback = back_callback
-        self.main_stack = main_stack
-        self.refresh_callback = refresh_callback
-        self.show_dataframe_dialog = show_dataframe_dialog
-        self.root_file_path = ""
-        self.detector_entries = []
-        self.init_ui()
-
-    def init_ui(self):
-        main_layout = QVBoxLayout(self)
-
-        title_stack = QStackedWidget(self)
-        # Removed background-color to match main app's color scheme
-        title_stack.setStyleSheet("")
-        title_widget = QWidget(self)
-        title_layout = QVBoxLayout(title_widget)
-        title_stack.addWidget(title_widget)
-        main_layout.addWidget(title_stack)
-
-        title = QLabel("Agregar Datos a Campaña Existente", self)
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 20px; font-weight: bold;")
-        title_layout.addWidget(title)
-
-        subtitle = QLabel(
-            "Selecciona una campaña existente y agrega datos manualmente o desde un archivo ROOT.",
-            self)
-        subtitle.setWordWrap(True)
-        subtitle.setStyleSheet("font-size: 14px;")
-        title_layout.addWidget(subtitle)
-
-        content_stack = QTabWidget(self)
-        # Removed background-color to match main app's color scheme
-        content_stack.setStyleSheet("")
-        main_layout.addWidget(content_stack)
-
-        # Manual Tab
-        manual_tab = QWidget()
-        manual_content = QWidget()
-        self.manual_layout = QGridLayout(manual_content)
-        manual_tab_layout = QVBoxLayout(manual_tab)
-        manual_tab_layout.addWidget(manual_content)
-        content_stack.addTab(manual_tab, "Datos Manuales")
-
-        self.manual_layout.addWidget(QLabel("Seleccionar Campaña:", self), 0, 0)
-        self.campaign_combo = QComboBox(self)
-        self.campaign_combo.currentIndexChanged.connect(self.update_detector_entries)
-        self.manual_layout.addWidget(self.campaign_combo, 0, 1, 1, 2)
-
-        # ROOT Tab
-        root_tab = QWidget()
-        root_content = QWidget()
-        self.root_layout = QVBoxLayout(root_content)
-        root_tab_layout = QVBoxLayout(root_tab)
-        root_tab_layout.addWidget(root_content)
-        content_stack.addTab(root_tab, "Datos desde ROOT")
-
-        self.root_layout.addWidget(QLabel("Seleccionar Campaña:", self))
-        self.campaign_combo_root = QComboBox(self)
-        self.campaign_combo_root.currentIndexChanged.connect(self.update_root_entries)
-        self.root_layout.addWidget(self.campaign_combo_root)
-
-        select_file_button = QPushButton("Seleccionar archivo ROOT", self)
-        select_file_button.setMaximumWidth(200)
-        select_file_button.clicked.connect(self.select_root_file)
-        self.root_layout.addWidget(select_file_button)
-        self.selected_file_label = QLabel("", self)
-        self.root_layout.addWidget(self.selected_file_label)
-
-        self.new_dlt_root = QLineEdit(self)
-        self.new_dlt_root.setPlaceholderText("Nuevo Archivo DLT")
-        self.new_dlt_root.setMaximumWidth(200)
-        self.root_layout.addWidget(self.new_dlt_root)
-
-        self.observations_root = QLineEdit(self)
-        self.observations_root.setPlaceholderText("Observaciones")
-        self.observations_root.setMaximumWidth(200)
-        self.root_layout.addWidget(self.observations_root)
-
-        save_button_root = QPushButton("Guardar Datos desde ROOT", self)
-        save_button_root.setMaximumWidth(200)
-        save_button_root.clicked.connect(self.save_root_data)
-        self.root_layout.addWidget(save_button_root)
-
-        root_back_button = QPushButton("Regresar", self)
-        root_back_button.setMaximumWidth(200)
-        root_back_button.clicked.connect(self.back_callback)  # Cambiado a back_callback
-        self.root_layout.addWidget(root_back_button)
-
-        # Manual "Regresar" Button
-        manual_back_button = QPushButton("Regresar", self)
-        manual_back_button.setMaximumWidth(200)
-        manual_back_button.clicked.connect(self.back_callback)  # Cambiado a back_callback
-        self.manual_layout.addWidget(manual_back_button, 20, 2)
-
-        self.refresh_campaigns()
-
-    def refresh_campaigns(self):
-        self.campaign_combo.clear()
-        self.campaign_combo_root.clear()
-        campaigns = get_existing_campaigns()
-        self.campaign_combo.addItems(campaigns)
-        self.campaign_combo_root.addItems(campaigns)
-
-    def update_detector_entries(self):
-        short_name = self.campaign_combo.currentText()
-        if not short_name:
-            return
-        num_detectors = get_num_detectors(short_name)
-        self.detector_entries.clear()
-
-        # Eliminar entradas anteriores (excepto los labels de campaña)
-        for i in reversed(range(self.manual_layout.count())):
-            item = self.manual_layout.itemAt(i)
-            if item and item.widget() and not isinstance(item.widget(), QLabel) and not isinstance(item.widget(), QPushButton):
-                item.widget().setParent(None)
-
-        left_entries = QVBoxLayout()
-        right_entries = QVBoxLayout()
-
-        for i in range(num_detectors):
-            detector_label = QLabel(f"Detector {i+1}", self)
-            total_counts = QLineEdit(self)
-            total_counts.setMaximumWidth(200)
-            neutron_counts = QLineEdit(self)
-            neutron_counts.setMaximumWidth(200)
-            if (i + 1) % 2 == 1:  # Impares
-                left_entries.addWidget(detector_label)
-                left_entries.addWidget(QLabel("Entries", self))
-                left_entries.addWidget(total_counts)
-                left_entries.addWidget(QLabel("Neutrons in Region [140, 820] keV", self))
-                left_entries.addWidget(neutron_counts)
-            else:  # Pares
-                right_entries.addWidget(detector_label)
-                right_entries.addWidget(QLabel("Entries", self))
-                right_entries.addWidget(total_counts)
-                right_entries.addWidget(QLabel("Neutrons in Region [140, 820] keV", self))
-                right_entries.addWidget(neutron_counts)
-            self.detector_entries.append((total_counts, neutron_counts))
-
-        detector_layout = QHBoxLayout()
-        detector_layout.addLayout(left_entries)
-        detector_layout.addLayout(right_entries)
-        self.manual_layout.addLayout(detector_layout, 1, 0, 1, 3)
-
-        self.new_dlt_manual = QLineEdit(self)
-        self.new_dlt_manual.setPlaceholderText("Nuevo Archivo DLT")
-        self.new_dlt_manual.setMaximumWidth(200)
-        self.manual_layout.addWidget(self.new_dlt_manual, 18, 1, 1, 2)
-
-        self.observations_manual = QLineEdit(self)
-        self.observations_manual.setPlaceholderText("Observaciones")
-        self.observations_manual.setMaximumWidth(200)
-        self.manual_layout.addWidget(self.observations_manual, 19, 1, 1, 2)
-
-        save_button_manual = QPushButton("Guardar Datos Manuales", self)
-        save_button_manual.setMaximumWidth(200)
-        save_button_manual.clicked.connect(self.save_manual_data)
-        self.manual_layout.addWidget(save_button_manual, 20, 1)
-
-    def update_root_entries(self):
-        short_name = self.campaign_combo_root.currentText()
-        if not short_name:
-            return
-        # No es necesario volver a crear los widgets de campaña, se asume que ya están creados
-        # Por lo tanto, evitamos limpiar y re-agregar widgets que ya existen
-        # Esto previene la pérdida de la lista de campañas en el ComboBox
-
-    def select_root_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo ROOT", "", "ROOT Files (*.root)")
-        if file_name:
-            self.selected_file_label.setText(file_name)
-            self.root_file_path = file_name
-
-            # Obtener la carpeta ./rootonline/{Nombre de campaña seleccionada}
-            short_name = self.campaign_combo_root.currentText()
-            target_folder = os.path.join(".", "rootonline", short_name)
-            if not os.path.exists(target_folder):
-                os.makedirs(target_folder, exist_ok=True)
-
-            # Abrir la carpeta en el explorador de archivos
-            try:
-                if os.name == 'nt':  # Windows
-                    os.startfile(os.path.abspath(target_folder))
-                elif os.name == 'posix':  # macOS o Linux
-                    subprocess.call(['xdg-open', os.path.abspath(target_folder)])
-            except Exception as e:
-                QMessageBox.warning(self, "Advertencia", f"No se pudo abrir la carpeta: {e}")
-
-    def save_manual_data(self):
-        short_name = self.campaign_combo.currentText()
-        detector_entries = []
-        for total_entry, neutron_entry in self.detector_entries:
-            total_text = total_entry.text().strip()
-            neutron_text = neutron_entry.text().strip()
-            if not total_text or not neutron_text:
-                QMessageBox.critical(self, "Error", "Todos los campos de detectores deben estar completos.")
-                return
-            try:
-                total = float(total_text)
-                neutron = float(neutron_text)
-                detector_entries.append((total, neutron))
-            except ValueError:
-                QMessageBox.critical(self, "Error", "Las entradas deben ser números válidos.")
-                return
-
-        new_dlt = self.new_dlt_manual.text().strip()
-        observations = self.observations_manual.text().strip()
-
-        if not new_dlt:
-            QMessageBox.critical(self, "Error", "El campo 'Nuevo Archivo DLT' no puede estar vacío.")
-            return
-
-        if not observations:
-            QMessageBox.critical(self, "Error", "El campo 'Observaciones' no puede estar vacío.")
-            return
-
-        # Obtener el timestamp basado en la última modificación del archivo ROOT
-        try:
-            modification_time = os.path.getmtime(self.root_file_path)
-            timestamp = datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d %H:%M:%S')
-        except Exception as e:
-            QMessageBox.warning(self, "Advertencia", f"No se pudo obtener la fecha de modificación del archivo ROOT: {e}")
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Guardar los datos sin verificar el archivo .dlt y comentarios
+    def show_dataframe(self, short_name):
         campaign_file = f"./data/{short_name}-CountingRate.csv"
-        os.makedirs("./data", exist_ok=True)
-
         if os.path.exists(campaign_file):
-            existing_df = pd.read_csv(campaign_file)
+            df = pd.read_csv(campaign_file)
+            self.show_dataframe_dialog(df)
         else:
-            existing_df = pd.DataFrame()
-
-        new_data = {
-            "timestamp": timestamp,
-            "observations": observations
-        }
-
-        for i, (total, neutron) in enumerate(detector_entries, start=1):
-            new_data[f"detector_{i}_total_counts"] = total
-            new_data[f"detector_{i}_neutron_counts"] = neutron
-
-        new_df = pd.concat([existing_df, pd.DataFrame([new_data])], ignore_index=True)
-        new_df.to_csv(campaign_file, index=False)
-
-        QMessageBox.information(self, "Éxito", "Datos de la campaña guardados con éxito.")
-        self.show_dataframe(short_name)
-        self.back_callback()  # Cambiado a back_callback
-
-    def save_root_data(self):
-        short_name = self.campaign_combo_root.currentText()
-        root_file_path = self.root_file_path
-        new_dlt = self.new_dlt_root.text().strip()
-        observations = self.observations_root.text().strip()
-
-        if not root_file_path:
-            QMessageBox.critical(self, "Error", "Debe seleccionar un archivo ROOT.")
-            return
-
-        if not new_dlt:
-            QMessageBox.critical(self, "Error", "El campo 'Nuevo Archivo DLT' no puede estar vacío.")
-            return
-
-        if not observations:
-            QMessageBox.critical(self, "Error", "El campo 'Observaciones' no puede estar vacío.")
-            return
-
-        try:
-            root_file = ROOT.TFile(root_file_path)
-            if root_file.IsZombie():
-                QMessageBox.critical(self, "Error", "No se pudo abrir el archivo ROOT.")
-                return
-
-            hist_names = list({key.GetName().split(';')[0] for key in root_file.GetListOfKeys() if key.GetName().endswith(('_cal', '_CAL', '_Cal'))})
-            if not hist_names:
-                QMessageBox.critical(self, "Error", "No se encontraron histogramas con terminación '_cal', '_CAL' o '_Cal' en el archivo ROOT.")
-                return
-
-            results = []
-            for hist_name in hist_names:
-                obj = root_file.Get(f"{hist_name};1")
-                if isinstance(obj, ROOT.TH1):
-                    integral_total = obj.Integral(0, 15000)
-                    integral_region = obj.Integral(140, 820)
-                    results.append((hist_name, integral_total, integral_region))
-
-            df = pd.DataFrame(results, columns=['Nombre del Histograma', 'Total Counts', 'Neutron Counts'])
-            self.save_results_to_csv(short_name, df, new_dlt, observations)
-            self.show_dataframe(short_name)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"No se pudo procesar el archivo ROOT: {e}")
-            return
-
-        QMessageBox.information(self, "Éxito", "Datos desde archivo ROOT guardados con éxito.")
-        self.back_callback()  # Cambiado a back_callback
-
-    def save_results_to_csv(self, short_name, df, new_dlt, observations):
-        campaign_file = f"./data/{short_name}-CountingRate.csv"
-        os.makedirs("./data", exist_ok=True)
-
-        if os.path.exists(campaign_file):
-            existing_df = pd.read_csv(campaign_file)
-        else:
-            existing_df = pd.DataFrame()
-
-        # Obtener el timestamp basado en la última modificación del archivo ROOT
-        try:
-            modification_time = os.path.getmtime(self.root_file_path)
-            timestamp = datetime.fromtimestamp(modification_time).strftime('%Y-%m-%d %H:%M:%S')
-        except Exception as e:
-            QMessageBox.warning(self, "Advertencia", f"No se pudo obtener la fecha de modificación del archivo ROOT: {e}")
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        new_data = {
-            "timestamp": timestamp,
-            "observations": observations
-        }
-
-        for i, row in df.iterrows():
-            new_data[f"detector_{i+1}_total_counts"] = row['Total Counts']
-            new_data[f"detector_{i+1}_neutron_counts"] = row['Neutron Counts']
-
-        new_df = pd.concat([existing_df, pd.DataFrame([new_data])], ignore_index=True)
-        new_df.to_csv(campaign_file, index=False)
+            QMessageBox.warning(self, "Advertencia", "No se encontró el archivo de campaña.")
 
     def show_dataframe_dialog(self, df):
         # Implementación de un diálogo para mostrar el DataFrame

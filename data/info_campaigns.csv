@@ -1,5 +1,5 @@
 Numero,Lugar,Fecha de Inicio,Fecha de Termino,Nombre Corto,Número de Detectores,DLT Path,ROOT Path
-Lab,CEFENEN,24/06/12,24/07/12,Test4det,4,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det/rootfiles
+Lab,CEFENEN,24/06/12,24/07/12,Test4det,4,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612-test-4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612-test-4det/rootonline
 5ta,Antofagasta,24/08/01,24/08/05,UCN-Antofagasta,16,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det/rootfiles
 test,mi Casa,,,,3,/home/molina,/home/molina/rootfiles
 1ra,Santiago,24/07/16,24/07/16,PruebaLinux,5,/home/lin/,/home/lin/

@@ -1,11 +1,6 @@
-timestamp,detector_1_total_counts,detector_1_neutron_counts,detector_2_total_counts,detector_2_neutron_counts,detector_3_total_counts,detector_3_neutron_counts,detector_4_total_counts,detector_4_neutron_counts,dlt_file,observations,detector_5_total_counts,detector_5_neutron_counts
-2024-07-12 15:44:16,647104.0,647259.0,78069.0,62272.0,690484.0,619305.0,559599.0,527503.0,ROOT file import,,,
-2024-07-12 20:26:58,690484.0,619305.0,101965.0,62272.0,559599.0,527503.0,,,ROOT file import,,,
-2024-07-12 21:25:23,684372.0,647259.0,690484.0,619305.0,101965.0,62272.0,559599.0,527503.0,240607_test4det.dlt,sn,,
-2024-07-12 21:28:29,684372.0,647259.0,690484.0,619305.0,101965.0,62272.0,559599.0,527503.0,240607_test4det.dlt,"k,",,
-2024-07-12 22:10:03,684372.0,647259.0,690484.0,619305.0,101965.0,62272.0,559599.0,527503.0,240607_test4det.dlt,Sin Observaciones,,
-2024-07-12 22:29:42,1000000.0,700000.0,1000000.0,800000.0,1000000.0,600000.0,1000000.0,900000.0,240607_test4det.dlt,Sin Observaciones,,
-2024-07-12 22:30:34,684372.0,647259.0,690484.0,619305.0,101965.0,62272.0,559599.0,527503.0,240607_test4det.dlt,Sin Observaciones,,
-2024-07-14 18:28:17,684372.0,647259.0,690484.0,619305.0,101965.0,62272.0,559599.0,527503.0,240607_test4det.dlt,Sin Observaciones,,
-2024-09-24 23:16,101965.0,62272.0,690484.0,619305.0,684372.0,647259.0,559599.0,527503.0,2525_new.dlt,sin,101965.0,62272.0
-2024-09-24 23:16,101965.0,62272.0,690484.0,619305.0,684372.0,647259.0,559599.0,527503.0,2525_new.dlt,sin,101965.0,62272.0
+timestamp,dlt_file,observations,detector_1_histogram_name,detector_1_total_counts,detector_1_neutron_counts,detector_2_histogram_name,detector_2_total_counts,detector_2_neutron_counts,detector_3_histogram_name,detector_3_total_counts,detector_3_neutron_counts,detector_4_histogram_name,detector_4_total_counts,detector_4_neutron_counts
+2024-07-19 08:14:32,,Sin observaciones,ch1_12cm_fast_cal,839710.0,793967.0,ch2_6cm_epi_cal,849686.0,761931.0,ch3_Pb_HE_cal,125581.0,76629.0,ch4_naked_th_cal,686104.0,646599.0
+2024-07-19 14:52:10,,Sin observaciones,ch1_12cm_fast_cal,846132.0,800012.0,ch2_6cm_epi_cal,856160.0,767781.0,ch3_Pb_HE_cal,126548.0,77215.0,ch4_naked_th_cal,691366.0,651550.0
+2024-07-22 08:07:37,,Sin observaciones,ch1_12cm_fast_cal,907667.0,858077.0,ch2_6cm_epi_cal,918368.0,823477.0,ch3_Pb_HE_cal,136015.0,82931.0,ch4_naked_th_cal,740972.0,698228.0
+2024-07-25 08:23:38,,Sin observaciones,ch1_12cm_fast_cal,976352.0,923062.0,ch2_6cm_epi_cal,987896.0,885855.0,ch3_Pb_HE_cal,146202.0,89108.0,ch4_naked_th_cal,795461.0,749588.0
+2024-07-26 15:55:00,N/A,Sin observaciones,ch1_12cm_fast_cal,1007882.0,952972.0,ch2_6cm_epi_cal,1020440.0,915271.0,ch3_Pb_HE_cal,150651.0,91803.0,ch4_naked_th_cal,821747.0,774441.0

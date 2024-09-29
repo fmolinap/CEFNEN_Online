@@ -7,7 +7,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 from PIL import Image, ImageQt
-from logbook import Logbook
+from crear_nueva_campagna import CrearNuevaCampagna
+from agregar_datos import AgregarDatos
 from calibrate import Calibrate
 from plot_cr_evo import PlotCREvo
 from plot_comparison import PlotComparison
@@ -17,9 +18,10 @@ from recalibrate_root import RecalibrateRoot
 from fetch_root_files import FetchRootFiles
 from fetch_dlt_files import FetchDLTFiles
 from lookuptable_setup import LookUpTableSetup
-#from edit_materials import EditMaterials
+# from edit_materials import EditMaterials
 from incident_report import IncidentReport
 from reporte_fin_de_campagna import ReporteFinCampagnaWindow  
+from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC  # Importar el nuevo archivo
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -29,8 +31,7 @@ class MainApp(QMainWindow):
 
         # Cargar y redimensionar la imagen
         original_image = Image.open("Logo_CEFNEN.png")
-        # Ajustar el tamaño deseado
-        desired_width = 150  # Ajusta el ancho deseado
+        desired_width = 150
         aspect_ratio = original_image.height / original_image.width
         desired_height = int(desired_width * aspect_ratio)
         resized_image = original_image.resize(
@@ -70,7 +71,7 @@ class MainApp(QMainWindow):
         # Subtítulo
         subtitle_label = QLabel(
             "Este es el programa de análisis online de las campañas experimentales de CEFNEN. "
-            "Ha sido desarrollado en  2024 para facilitar el análisis online de los datos "
+            "Ha sido desarrollado en 2024 para facilitar el análisis online de los datos "
             "de las Campañas en terreno."
         )
         subtitle_label.setWordWrap(True)
@@ -78,7 +79,7 @@ class MainApp(QMainWindow):
         subtitle_label.setStyleSheet("font-size: 14px;")
         main_layout.addWidget(subtitle_label)
 
-        main_layout.addStretch()  # Agregar estiramiento para empujar las secciones hacia arriba
+        main_layout.addStretch()
 
         # Separador
         separator = QFrame()
@@ -98,7 +99,7 @@ class MainApp(QMainWindow):
         self.create_section_frame("Calibraciones", self.create_calibration_buttons, sections_layout, 1, 0)
         self.create_section_frame("Análisis", self.create_analysis_buttons, sections_layout, 1, 1)
 
-        main_layout.addStretch()  # Agregar estiramiento para evitar espacio extra abajo
+        main_layout.addStretch()
 
     def create_section_frame(self, title, create_buttons_func, parent_layout, row, col):
         group_box = QGroupBox(title)
@@ -139,18 +140,12 @@ class MainApp(QMainWindow):
         btn_lookup_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_lookup_table)
 
-        #btn_edit_materials = QPushButton("Editar Materiales en Campaña")
-        #btn_edit_materials.clicked.connect(self.open_edit_materials)
-        #btn_edit_materials.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        #layout.addWidget(btn_edit_materials)
-
-        
         btn_generate_report = QPushButton("Generar Reporte Fin de Campaña")
         btn_generate_report.clicked.connect(self.open_generate_report)
         btn_generate_report.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_generate_report)
 
-        layout.addStretch()  # Agregar estiramiento para empujar los botones hacia arriba
+        layout.addStretch()
 
     def create_graphics_buttons(self, layout):
         btn_plot_cr_evo = QPushButton("Plot Neutron Counting Rates")
@@ -181,6 +176,12 @@ class MainApp(QMainWindow):
         btn_recalibrate_root.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_recalibrate_root)
 
+        # Botón para Generar Archivo de Calibración GASIFIC
+        btn_generate_calibration_gasific = QPushButton("Generar Archivo de Calibración GASIFIC")
+        btn_generate_calibration_gasific.clicked.connect(self.open_generate_calibration_gasific)
+        btn_generate_calibration_gasific.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_generate_calibration_gasific)
+
         layout.addStretch()
 
     def create_analysis_buttons(self, layout):
@@ -194,13 +195,13 @@ class MainApp(QMainWindow):
     # Métodos para abrir las diferentes ventanas
     def open_create_campaign(self):
         self.clear_central_widget()
-        logbook = Logbook(back_callback=self.create_main_window)
-        self.setCentralWidget(logbook)
+        crear_campagna = CrearNuevaCampagna(back_callback=self.create_main_window)
+        self.setCentralWidget(crear_campagna)
 
     def open_add_data(self):
         self.clear_central_widget()
-        logbook = Logbook(back_callback=self.create_main_window)
-        self.setCentralWidget(logbook)
+        agregar_datos = AgregarDatos(back_callback=self.create_main_window)
+        self.setCentralWidget(agregar_datos)
 
     def open_fetch_root_files(self):
         self.clear_central_widget()
@@ -221,11 +222,6 @@ class MainApp(QMainWindow):
         self.clear_central_widget()
         lookup_table_setup = LookUpTableSetup(back_callback=self.create_main_window)
         self.setCentralWidget(lookup_table_setup)
-
-    #def open_edit_materials(self):
-    #    self.clear_central_widget()
-    #    edit_materials = EditMaterials(back_callback=self.create_main_window)
-    #    self.setCentralWidget(edit_materials)
 
     def open_plot_cr_evo(self):
         self.clear_central_widget()
@@ -251,6 +247,12 @@ class MainApp(QMainWindow):
         self.clear_central_widget()
         recalibrate_root = RecalibrateRoot(back_callback=self.create_main_window)
         self.setCentralWidget(recalibrate_root)
+
+    def open_generate_calibration_gasific(self):
+        """Abre la ventana de Generar Archivo de Calibración GASIFIC."""
+        self.clear_central_widget()
+        gasific_widget = GenerarArchivoCalibracionGASIFIC(back_callback=self.create_main_window)
+        self.setCentralWidget(gasific_widget)
 
     def open_noise_analysis(self):
         self.clear_central_widget()
