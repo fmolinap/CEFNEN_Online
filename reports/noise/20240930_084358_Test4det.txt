@@ -1,0 +1,4 @@
+Detector 1: Variación de -0.01%
+Detector 2: Variación de -0.02%
+Detector 3: Variación de 0.06%
+Detector 4: Variación de -0.01%
