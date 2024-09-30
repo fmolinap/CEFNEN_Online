@@ -263,7 +263,12 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         worksheet.write_row('B2', headers, yellow_bg_format)
 
         # Escribir valores correspondientes en B3
-        worksheet.write_row('B3', self.global_data.iloc[0].values)
+        values = self.global_data.iloc[0].values.tolist()
+
+        # Asegurar que la celda J3 esté vacía
+        if len(values) >= 9:
+            values[8] = ''  # Índice 8 corresponde a la columna J (nueve columnas desde B)
+        worksheet.write_row('B3', values)
 
     def write_hard_sheet(self, writer, sheet_name):
         """Escribe la hoja Hard_{Name} con el formato especificado."""
@@ -366,6 +371,8 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
 
         # Definir los tiempos y denominadores
         conditions = [
+            ("1 sec", "_CR_1sec", 1, 600000),
+            ("1 min", "_CR_1min", 60, 100000),
             ("15 min", "_CR_15min", 60*15, 10000),
             ("30 min", "_CR_30min", 60*30, 5000),
             ("1 hour", "_CR_1h", 60*60, 2500)
