@@ -22,7 +22,6 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         self.sampling_freq = None
         self.channel_names = []
         self.range_max = 15000  # Valor por defecto
-        self.channel_mapping = {}  # Diccionario para el mapeo de canales
         self.init_ui()
 
     def init_ui(self):
@@ -57,12 +56,6 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         range_layout.addWidget(range_label)
         range_layout.addWidget(self.range_max_input)
         self.main_layout.addLayout(range_layout)
-
-        # Botón para cargar el archivo de mapeo
-        mapping_button = QPushButton("Cargar Archivo de Mapeo de Canales")
-        mapping_button.clicked.connect(self.load_channel_mapping)
-        mapping_button.setStyleSheet("background-color: #FFA500; color: black;")  # Naranja
-        self.main_layout.addWidget(mapping_button)
 
         # Layout para los botones en una cuadrícula
         buttons_layout = QGridLayout()
@@ -185,31 +178,26 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         try:
             # Leer el archivo CSV de calibración
             self.calibration_file = pd.read_csv(file_path)
+
+            # Crear un diccionario para mapear nombres de canales a Slope y Offset
+            self.calibration_mapping = {}
+            for index, row in self.calibration_file.iterrows():
+                hist_name = row['Histograma']
+                # Remover '_EFIR' si está presente
+                if hist_name.endswith('_EFIR'):
+                    channel_name = hist_name[:-5]
+                else:
+                    channel_name = hist_name
+                self.calibration_mapping[channel_name] = {
+                    'Slope': row['Slope'],
+                    'Offset': row['Offset']
+                }
+
             # Mostrar el nombre del archivo cargado
             self.calibration_file_label.setText(f"Archivo de calibración cargado: {os.path.basename(file_path)}")
             QMessageBox.information(self, "Éxito", f"Archivo de calibración {file_path} cargado exitosamente.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo cargar el archivo de calibración: {e}")
-            return
-
-    def load_channel_mapping(self):
-        """Carga el archivo de mapeo entre nombres de canales y detectores."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Seleccionar archivo de mapeo de canales", "", "CSV Files (*.csv)"
-        )
-        if not file_path:
-            return
-
-        try:
-            # Leer el archivo CSV de mapeo
-            mapping_df = pd.read_csv(file_path)
-            if 'Canal' not in mapping_df.columns or 'Detector' not in mapping_df.columns:
-                raise ValueError("El archivo de mapeo debe tener columnas 'Canal' y 'Detector'.")
-            # Crear el diccionario de mapeo
-            self.channel_mapping = pd.Series(mapping_df.Detector.values, index=mapping_df.Canal).to_dict()
-            QMessageBox.information(self, "Éxito", f"Archivo de mapeo {file_path} cargado exitosamente.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"No se pudo cargar el archivo de mapeo: {e}")
             return
 
     def generate_calibration_file(self):
@@ -333,10 +321,15 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
 
         # Rellenar los datos a partir de la fila 3
         for idx, channel_name in enumerate(self.channel_names):
-            # Obtener el nombre del detector desde el mapeo, si existe
-            detector_name = self.channel_mapping.get(channel_name, channel_name)
-            cal_factor = self.get_calibration_value(detector_name, "Slope")
-            cal_offset = self.get_calibration_value(detector_name, "Offset")
+            # Obtener los valores de calibración desde el diccionario
+            calibration_data = self.calibration_mapping.get(channel_name)
+            if calibration_data is None:
+                QMessageBox.critical(self, "Error",
+                                     f"No se encontraron valores de calibración para el canal {channel_name}.")
+                return
+
+            cal_factor = calibration_data['Slope']
+            cal_offset = calibration_data['Offset']
 
             # Validar que cal_factor y cal_offset no sean None o NaN
             if cal_factor is None or cal_offset is None or math.isnan(cal_factor) or math.isnan(cal_offset):
@@ -389,7 +382,7 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         }
         base_factor = factor_mapping.get(sampling_freq, 4e-9)
 
-        # Añadir línea de títulos desde B a O con fondo amarillo
+        # Encabezados
         headers = ["Name", "Type", "Source", "Energy Min", "Energy Max", "Time source",
                    "Time Range Min", "Time Range Max", "Hist Bins", "Calibration Factor",
                    "Units", "Hist Enable", "Rate calibration factor", "Rate units"]
@@ -400,7 +393,7 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
                 worksheet.write(row_num, 2, 'Time Plots', red_bold_format)
                 row_num += 1
 
-                # Escribir encabezados
+                # Añadir línea de títulos desde B a O con fondo amarillo
                 worksheet.write_row(row_num, 1, headers, yellow_bg_format)
                 row_num += 1
 
@@ -442,19 +435,6 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
 
         # Escribir "Groups" en la celda C1 en rojo
         worksheet.write('C1', 'Groups', red_bold_format)
-
-    def get_calibration_value(self, detector_name, value_type):
-        """Obtiene el valor de calibración para un detector específico desde el archivo CSV cargado."""
-        if self.calibration_file is None:
-            return None
-        row = self.calibration_file[self.calibration_file['Detector'] == detector_name]
-        if not row.empty:
-            value = row[value_type].values[0]
-            if pd.isnull(value):
-                return None
-            return value
-        else:
-            return None
 
     def back(self):
         """Regresa a la ventana principal."""
