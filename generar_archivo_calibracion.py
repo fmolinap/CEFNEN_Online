@@ -5,7 +5,7 @@ import os
 import math
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QComboBox,
-    QMessageBox, QApplication, QSpinBox, QGridLayout
+    QMessageBox, QApplication, QSpinBox, QGridLayout, QInputDialog
 )
 from PySide6.QtCore import Qt
 from utils import get_existing_campaigns
@@ -18,6 +18,7 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         self.global_data = None
         self.hard_data = None
         self.calibration_file = None
+        self.calibration_mapping = {}
         self.digitalizador_name = None
         self.sampling_freq = None
         self.channel_names = []
@@ -87,6 +88,12 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         generate_button.setStyleSheet("background-color: #4CAF50; color: white;")  # Verde
         buttons_layout.addWidget(generate_button, 2, 0, 1, 2)
 
+        # Botón para generar el archivo de configuración offline
+        generate_offline_button = QPushButton("Generar archivo de configuración para análisis offline")
+        generate_offline_button.clicked.connect(self.generate_offline_config_file)
+        generate_offline_button.setStyleSheet("background-color: #4CAF50; color: white;")  # Verde
+        buttons_layout.addWidget(generate_offline_button, 3, 0, 1, 2)
+
         # Botón de regresar
         back_button = QPushButton("Regresar")
         back_button.clicked.connect(self.back)
@@ -119,19 +126,16 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
 
         try:
             # Leer el archivo Excel con las hojas Global y Hard_{Name}
-            # Especificamos header=1 para que pandas reconozca los encabezados en la fila 2
-            self.global_data = pd.read_excel(file_path, sheet_name='Global', header=1, index_col=None)
+            # Especificamos header=None para que pandas no interprete ninguna fila como encabezado
+            self.global_data = pd.read_excel(file_path, sheet_name='Global', header=None, index_col=None)
 
-            # Eliminar columnas 'Unnamed' si existen
-            self.global_data = self.global_data.loc[:, ~self.global_data.columns.str.contains('^Unnamed')]
-
-            # Obtener el nombre del digitalizador de la celda B3 (columna 'Name')
-            self.digitalizador_name = self.global_data.at[0, 'Name']
+            # Obtener el nombre del digitalizador de la celda B3 (fila 2, columna 1)
+            self.digitalizador_name = self.global_data.iloc[2, 1]
             if not self.digitalizador_name:
                 raise ValueError("No se pudo encontrar el nombre del digitalizador en la celda B3 de la hoja 'Global'.")
 
-            # Obtener la frecuencia de muestreo de la celda H3 (columna 'Clock Freq')
-            self.sampling_freq = self.global_data.at[0, 'Clock Freq']
+            # Obtener la frecuencia de muestreo de la celda H3 (fila 2, columna 7)
+            self.sampling_freq = self.global_data.iloc[2, 7]
             if not self.sampling_freq:
                 raise ValueError("No se pudo encontrar la frecuencia de muestreo en la celda H3 de la hoja 'Global'.")
 
@@ -246,6 +250,118 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo generar el archivo de calibración: {e}")
 
+    def generate_offline_config_file(self):
+        """Genera el archivo de configuración para análisis offline."""
+        if self.global_data is None or self.hard_data is None or self.calibration_file is None:
+            QMessageBox.critical(
+                self, "Error", "Debe cargar el archivo base y el archivo de calibración antes de generar."
+            )
+            return
+
+        short_name = self.selected_campaign.currentText().strip()
+        if not short_name:
+            QMessageBox.critical(self, "Error", "Debe seleccionar una campaña válida.")
+            return
+
+        # Preguntar al usuario si desea tiempos en ms o us
+        time_bases = ['ms', 'us']
+        time_base, ok = QInputDialog.getItem(self, "Seleccionar base temporal",
+                                             "Seleccione la base temporal para TFactor:",
+                                             time_bases, 0, False)
+        if not ok or not time_base:
+            return
+
+        try:
+            # Leer el archivo Excel generado previamente
+            calibration_file_path = f"./calibration/{short_name}/{short_name}_archivo_calibracion.xlsx"
+            if not os.path.exists(calibration_file_path):
+                QMessageBox.critical(self, "Error", f"No se encontró el archivo de calibración: {calibration_file_path}")
+                return
+
+            # Leer las hojas necesarias
+            global_df = pd.read_excel(calibration_file_path, sheet_name='Global', header=None)
+            hard_sheet_name = f"Hard_{self.digitalizador_name}"
+            hard_df = pd.read_excel(calibration_file_path, sheet_name=hard_sheet_name, header=2)
+            cal_sheet_name = f"Cal_{self.digitalizador_name}"
+            cal_df = pd.read_excel(calibration_file_path, sheet_name=cal_sheet_name, header=1)
+
+            # Acceder a los valores en celdas específicas en la hoja 'Global'
+
+            # Crate (celda F3 -> fila 2, columna 5)
+            crate = global_df.iloc[2, 5]
+
+            # ModId (celda D3 -> fila 2, columna 3)
+            mod_id = global_df.iloc[2, 3]
+
+            # Type (entre Channel y Parameter) (celda C3 -> fila 2, columna 2)
+            type2 = global_df.iloc[2, 2]
+
+            # Valores fijos
+            type_value = 1  # Valor fijo
+            index1 = 0  # Valor fijo
+            index2 = 0  # Valor fijo
+            parameter = 'EFIR'  # Valor fijo
+            ethreshold = 1  # Valor fijo
+            emax = 15000  # Valor fijo
+            t_offset = 0  # Valor fijo
+
+            # Obtener TFactor según la base temporal
+            factor_mapping = {
+                250: 4e-9,
+                125: 8e-9,
+                62.5: 16e-9,
+                62: 16e-9,
+                25: 40e-9
+            }
+            base_factor = factor_mapping.get(self.sampling_freq, 4e-9)
+            if time_base == 'ms':
+                t_factor = base_factor * 1e3
+            else:  # 'us'
+                t_factor = base_factor * 1e6
+
+            # Valores fijos
+            ebin = 3500
+            elow = 0
+            ehigh = 3500
+            tbin = 1000
+            tlow = 0
+            thigh = 200000
+            num_of_call_sections = 0  # Valor fijo
+            extra_values = [''] * 0  # Espacios adicionales
+
+            # Preparar el archivo CSV
+            output_file_path = f"./calibration/{short_name}/OfflineConf_Signals_{short_name}_{time_base}.csv"
+            with open(output_file_path, 'w') as csvfile:
+                # Escribir el encabezado
+                header = "Name Id Crate ModId Type Index1 Index2 Channel Type Parameter Ethreshold(cal) Emax(cal) " \
+                         "EOffset EFactor TOffset TFactor Ebin Elow Ehigh Tbin Tlow Thigh NumOfCallSections " \
+                         "Xlow Xhigh Offset Fact1 Fact2 Xlow Xhigh Offset Fact1 Fact2 Xlow Xhigh Offset Fact1 Fact2"
+                csvfile.write(header + '\n')
+
+                for idx, row in hard_df.iterrows():
+                    name = row['Name']
+                    id_value = row['Chan Num']
+
+                    # Buscar los valores de EOffset y EFactor en la hoja de calibración
+                    cal_row = cal_df[cal_df['Name'] == f"{name}_Cal"]
+                    if cal_row.empty:
+                        QMessageBox.critical(self, "Error",
+                                             f"No se encontraron valores de calibración para el canal {name}.")
+                        return
+                    e_offset = cal_row['Cal Offset'].values[0]
+                    e_factor = cal_row['Cal Factor'].values[0]
+
+                    # Preparar la línea a escribir
+                    line = f"{name} {id_value} {crate} {mod_id} {type_value} {index1} {index2} {id_value} " \
+                           f"{type2} {parameter} {ethreshold} {emax} {e_offset} {e_factor} {t_offset} {t_factor} " \
+                           f"{ebin} {elow} {ehigh} {tbin} {tlow} {thigh} {num_of_call_sections} {' '.join(extra_values)}"
+                    csvfile.write(line + '\n')
+
+            self.result_text.setText(f"Archivo de configuración offline generado en: {output_file_path}")
+            QMessageBox.information(self, "Éxito", f"Archivo de configuración guardado como: {output_file_path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo generar el archivo de configuración: {e}")
+
     def write_global_sheet(self, writer):
         """Escribe la hoja Global con el formato especificado."""
         workbook = writer.book
@@ -259,11 +375,11 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         worksheet.write('A1', 'Modules', red_bold_format)
 
         # Escribir encabezados desde B2 con fondo amarillo
-        headers = self.global_data.columns.tolist()
+        headers = self.global_data.iloc[1, 1:].tolist()
         worksheet.write_row('B2', headers, yellow_bg_format)
 
         # Escribir valores correspondientes en B3
-        values = self.global_data.iloc[0].values.tolist()
+        values = self.global_data.iloc[2, 1:].tolist()
 
         # Asegurar que la celda J3 esté vacía
         if len(values) >= 9:
