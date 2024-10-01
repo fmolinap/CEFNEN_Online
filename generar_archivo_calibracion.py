@@ -499,9 +499,9 @@ class GenerarArchivoCalibracionGASIFIC(QWidget):
         factor_mapping = {
             250: 4e-9,
             125: 8e-9,
-            62.5: 16e-8,
-            62: 16e-8,
-            25: 4e-8
+            62.5: 16e-9,
+            62: 16e-9,
+            25: 4e-9
         }
         base_factor = factor_mapping.get(sampling_freq, 4e-9)
 
