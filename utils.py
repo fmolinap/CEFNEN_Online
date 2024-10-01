@@ -40,6 +40,24 @@ def get_campaign_info(short_name):
         return None
     return campaign_info.iloc[0].to_dict()
 
+def get_remote_path(campaign, file_type="ROOT"):
+    info_file = "./data/info_campaigns.csv"
+    df_info = pd.read_csv(info_file)
+    campaign_info = df_info[df_info["Nombre Corto"] == campaign]
+
+    if campaign_info.empty:
+        raise ValueError(f"No se encontró información para la campaña '{campaign}'.")
+
+    column_name = f"{file_type} Path"
+    if column_name not in campaign_info.columns:
+        raise KeyError(f"La columna '{column_name}' no existe en el archivo info_campaigns.csv.")
+
+    remote_path = campaign_info.iloc[0][column_name]
+    if not remote_path:
+        raise ValueError(f"La ruta remota de {file_type} no está definida para esta campaña.")
+
+    return remote_path
+
 def save_detector_data(short_name, data_entries, new_dlt, observations):
     campaign_file = f"./data/{short_name}-CountingRate.csv"
     os.makedirs("./data", exist_ok=True)

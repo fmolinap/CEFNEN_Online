@@ -17,6 +17,9 @@ from calibration_root import CalibrationRoot
 from recalibrate_root import RecalibrateRoot
 from fetch_root_files import FetchRootFiles
 from fetch_dlt_files import FetchDLTFiles
+from fetch_config_files import FetchConfigFiles
+from send_config_files_to_remote import SendConfigFilesToRemote
+from send_offline_config_files import SendOfflineConfigFiles
 from lookuptable_setup import LookUpTableSetup
 # from edit_materials import EditMaterials
 from incident_report import IncidentReport
@@ -93,21 +96,22 @@ class MainApp(QMainWindow):
         sections_layout.setSpacing(10)
         main_layout.addLayout(sections_layout)
 
-        # Crear los marcos de sección en una cuadrícula 2x2
+        # Crear los marcos de sección en una cuadrícula
         self.create_section_frame("Campañas", self.create_campaign_buttons, sections_layout, 0, 0)
         self.create_section_frame("Gráficos", self.create_graphics_buttons, sections_layout, 0, 1)
         self.create_section_frame("Calibraciones", self.create_calibration_buttons, sections_layout, 1, 0)
         self.create_section_frame("Análisis", self.create_analysis_buttons, sections_layout, 1, 1)
+        self.create_section_frame("Gestión de Archivos", self.create_file_management_buttons, sections_layout, 2, 0, 1, 2)
 
         main_layout.addStretch()
 
-    def create_section_frame(self, title, create_buttons_func, parent_layout, row, col):
+    def create_section_frame(self, title, create_buttons_func, parent_layout, row, col, rowspan=1, colspan=1):
         group_box = QGroupBox(title)
         layout = QVBoxLayout()
         group_box.setLayout(layout)
         create_buttons_func(layout)
         group_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        parent_layout.addWidget(group_box, row, col)
+        parent_layout.addWidget(group_box, row, col, rowspan, colspan)
 
     def create_campaign_buttons(self, layout):
         btn_new_campaign = QPushButton("Crear Nueva Campaña")
@@ -119,16 +123,6 @@ class MainApp(QMainWindow):
         btn_add_data.clicked.connect(self.open_add_data)
         btn_add_data.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_add_data)
-
-        btn_fetch_root = QPushButton("Traer archivos ROOT desde PC Adquisición")
-        btn_fetch_root.clicked.connect(self.open_fetch_root_files)
-        btn_fetch_root.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        layout.addWidget(btn_fetch_root)
-
-        btn_fetch_dlt = QPushButton("Traer archivos DLT desde PC Adquisición")
-        btn_fetch_dlt.clicked.connect(self.open_fetch_dlt_files)
-        btn_fetch_dlt.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        layout.addWidget(btn_fetch_dlt)
 
         btn_incident_report = QPushButton("Bitácora de Campaña")
         btn_incident_report.clicked.connect(self.open_incident_report)
@@ -176,7 +170,6 @@ class MainApp(QMainWindow):
         btn_recalibrate_root.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_recalibrate_root)
 
-        # Botón para Generar Archivo de Calibración GASIFIC
         btn_generate_calibration_gasific = QPushButton("Generar Archivo de Calibración GASIFIC")
         btn_generate_calibration_gasific.clicked.connect(self.open_generate_calibration_gasific)
         btn_generate_calibration_gasific.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -189,6 +182,34 @@ class MainApp(QMainWindow):
         btn_noise_analysis.clicked.connect(self.open_noise_analysis)
         btn_noise_analysis.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_noise_analysis)
+
+        layout.addStretch()
+
+    def create_file_management_buttons(self, layout):
+        btn_fetch_root = QPushButton("Traer archivos ROOT desde PC Adquisición")
+        btn_fetch_root.clicked.connect(self.open_fetch_root_files)
+        btn_fetch_root.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_fetch_root)
+
+        btn_fetch_dlt = QPushButton("Traer archivos DLT desde PC Adquisición")
+        btn_fetch_dlt.clicked.connect(self.open_fetch_dlt_files)
+        btn_fetch_dlt.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_fetch_dlt)
+
+        btn_fetch_config = QPushButton("Traer archivos XLSX de configuración de GASIFIC")
+        btn_fetch_config.clicked.connect(self.open_fetch_config_files)
+        btn_fetch_config.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_fetch_config)
+
+        btn_send_config = QPushButton("Enviar archivos XLSX de configuración de GASIFIC al PC de Adquisición")
+        btn_send_config.clicked.connect(self.open_send_config_files_to_remote)
+        btn_send_config.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_send_config)
+
+        btn_send_offline_config = QPushButton("Enviar archivos de configuración CSV Offline")
+        btn_send_offline_config.clicked.connect(self.open_send_offline_config_files)
+        btn_send_offline_config.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_send_offline_config)
 
         layout.addStretch()
 
@@ -212,6 +233,21 @@ class MainApp(QMainWindow):
         self.clear_central_widget()
         fetch_dlt_files = FetchDLTFiles(back_callback=self.create_main_window)
         self.setCentralWidget(fetch_dlt_files)
+
+    def open_fetch_config_files(self):
+        self.clear_central_widget()
+        fetch_config_files = FetchConfigFiles(back_callback=self.create_main_window)
+        self.setCentralWidget(fetch_config_files)
+
+    def open_send_config_files_to_remote(self):
+        self.clear_central_widget()
+        send_config_files = SendConfigFilesToRemote(back_callback=self.create_main_window)
+        self.setCentralWidget(send_config_files)
+
+    def open_send_offline_config_files(self):
+        self.clear_central_widget()
+        send_offline_config_files = SendOfflineConfigFiles(back_callback=self.create_main_window)
+        self.setCentralWidget(send_offline_config_files)
 
     def open_incident_report(self):
         self.clear_central_widget()
@@ -249,7 +285,6 @@ class MainApp(QMainWindow):
         self.setCentralWidget(recalibrate_root)
 
     def open_generate_calibration_gasific(self):
-        """Abre la ventana de Generar Archivo de Calibración GASIFIC."""
         self.clear_central_widget()
         gasific_widget = GenerarArchivoCalibracionGASIFIC(back_callback=self.create_main_window)
         self.setCentralWidget(gasific_widget)
@@ -265,11 +300,9 @@ class MainApp(QMainWindow):
         self.setCentralWidget(reporte_window)
 
     def clear_central_widget(self):
-        # Elimina el widget central actual
         current_widget = self.centralWidget()
         if current_widget is not None:
             current_widget.deleteLater()
-        # Establece un nuevo central_widget vacío
         self.setCentralWidget(QWidget())
 
 

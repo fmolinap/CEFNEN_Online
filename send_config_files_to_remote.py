@@ -1,27 +1,28 @@
 from PySide6.QtWidgets import (
-    QWidget, QLabel, QLineEdit, QPushButton, QMessageBox,  QLayout, QVBoxLayout, QHBoxLayout,
-    QComboBox, QTextEdit, QInputDialog, QApplication, QProgressBar, QFileDialog
+    QWidget, QLabel, QLineEdit, QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
+    QComboBox, QTextEdit, QInputDialog, QApplication, QProgressBar
 )
 from PySide6.QtCore import Qt, QThread, Signal
 import os
 import subprocess
 import pandas as pd
+from utils import get_existing_campaigns
 from rsync_thread import RsyncThread  # Importar RsyncThread desde el nuevo módulo
 
-class FetchDLTFiles(QWidget):
+class SendConfigFilesToRemote(QWidget):
     def __init__(self, back_callback=None):
         super().__init__()
         self.back_callback = back_callback
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Traer archivos DLT desde PC de Adquisición")
+        self.setWindowTitle("Enviar archivos de configuración a PC de Adquisición")
         self.resize(800, 600)
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignTop)
 
         # Título
-        title_label = QLabel("Traer archivos DLT desde PC de Adquisición")
+        title_label = QLabel("Enviar archivos de configuración a PC de Adquisición")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
         main_layout.addWidget(title_label)
@@ -40,27 +41,18 @@ class FetchDLTFiles(QWidget):
 
         # Selección de campaña
         self.selected_campaign = QComboBox()
-        self.campaigns = self.get_existing_campaigns()
+        self.campaigns = get_existing_campaigns()
         self.selected_campaign.addItems(self.campaigns)
         form_layout.addWidget(self.create_form_row("Seleccionar Campaña:", self.selected_campaign))
-
-        # Selección de ruta local
-        self.local_path_entry = QLineEdit("./dlt/{campaña seleccionada}")
-        browse_button = QPushButton("Seleccionar Directorio")
-        browse_button.clicked.connect(self.browse_local_directory)
-        local_path_layout = QHBoxLayout()
-        local_path_layout.addWidget(self.local_path_entry)
-        local_path_layout.addWidget(browse_button)
-        form_layout.addWidget(self.create_form_row("Ruta Local para Guardar:", local_path_layout))
 
         # Botones de acción
         buttons_layout = QHBoxLayout()
         main_layout.addLayout(buttons_layout)
 
-        self.fetch_button = QPushButton("Traer Archivos DLT")
-        self.fetch_button.setStyleSheet("background-color: #4CAF50; color: white;")
-        self.fetch_button.clicked.connect(self.fetch_dlt_files)
-        buttons_layout.addWidget(self.fetch_button)
+        self.send_button = QPushButton("Enviar Archivos de Configuración")
+        self.send_button.setStyleSheet("background-color: #4CAF50; color: white;")
+        self.send_button.clicked.connect(self.send_config_files)
+        buttons_layout.addWidget(self.send_button)
 
         self.back_button = QPushButton("Regresar")
         self.back_button.setStyleSheet("background-color: #f44336; color: white;")
@@ -111,34 +103,16 @@ class FetchDLTFiles(QWidget):
         label = QLabel(label_text)
         label.setFixedWidth(200)
         row_layout.addWidget(label)
-        if isinstance(widget, QLayout):
-            container = QWidget()
-            container.setLayout(widget)
-            row_layout.addWidget(container)
-        else:
-            row_layout.addWidget(widget)
+        row_layout.addWidget(widget)
         return row_widget
 
-    def get_existing_campaigns(self):
-        info_file = "./data/info_campaigns.csv"
-        if not os.path.exists(info_file):
-            return []
-        df_info = pd.read_csv(info_file)
-        return df_info["Nombre Corto"].tolist()
-
-    def browse_local_directory(self):
-        directory = QFileDialog.getExistingDirectory(self, "Seleccionar Directorio Local")
-        if directory:
-            self.local_path_entry.setText(directory)
-
-    def fetch_dlt_files(self):
+    def send_config_files(self):
         ip = self.ip_entry.text()
         port = self.port_entry.text()
         user = self.user_entry.text()
         campaign = self.selected_campaign.currentText()
-        local_path = self.local_path_entry.text().format(campaña_seleccionada=campaign)
 
-        if not ip or not port or not user or not campaign or not local_path:
+        if not ip or not port or not user or not campaign:
             QMessageBox.critical(self, "Error", "Todos los campos son obligatorios.")
             return
 
@@ -147,24 +121,24 @@ class FetchDLTFiles(QWidget):
             QMessageBox.critical(self, "Error", "Contraseña no ingresada.")
             return
 
-        try:
-            remote_path = self.get_remote_dlt_path(campaign)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+        local_path = f"./calibration/{campaign}/"
+        if not os.path.exists(local_path):
+            QMessageBox.critical(self, "Error", f"No se encontró la ruta local: {local_path}")
             return
 
-        os.makedirs(local_path, exist_ok=True)
+        # Ruta remota donde se enviarán los archivos
+        remote_path = "/home/lin/data/EXPERIMENTS_RAW_DATA/2024/ConfigFiles2024"
 
-        # Comando rsync para archivos DLT con preservación de timestamps
+        # Comando rsync para enviar los archivos .xlsx más recientes
         rsync_command = (
             f"sshpass -p '{password}' rsync -avz -e 'ssh -p {port}' "
-            f"{user}@{ip}:{remote_path}/ {local_path}"
+            f"{local_path}*.xlsx {user}@{ip}:{remote_path}/"
         )
 
-        self.progress_text.append("Iniciando transferencia de archivos DLT...\n")
+        self.progress_text.append("Iniciando envío de archivos de configuración...\n")
 
         # Deshabilitar botones durante la transferencia
-        self.fetch_button.setEnabled(False)
+        self.send_button.setEnabled(False)
         self.back_button.setEnabled(False)
 
         # Crear y ejecutar el hilo de rsync
@@ -190,33 +164,16 @@ class FetchDLTFiles(QWidget):
 
     def transfer_finished(self, success):
         if success:
-            self.progress_text.append("\nArchivos DLT transferidos correctamente.\n")
-            QMessageBox.information(self, "Éxito", "Transferencia completada con éxito.")
+            self.progress_text.append("\nArchivos de configuración enviados correctamente.\n")
+            QMessageBox.information(self, "Éxito", "Envío completado con éxito.")
         else:
-            self.progress_text.append("\nFallo en la transferencia de archivos.\n")
-            QMessageBox.critical(self, "Error", "La transferencia de archivos ha fallado.")
+            self.progress_text.append("\nFallo en el envío de archivos.\n")
+            QMessageBox.critical(self, "Error", "El envío de archivos ha fallado.")
 
         # Habilitar botones después de la transferencia
-        self.fetch_button.setEnabled(True)
+        self.send_button.setEnabled(True)
         self.back_button.setEnabled(True)
         self.progress_bar.setValue(0)
-
-    def get_remote_dlt_path(self, campaign):
-        info_file = "./data/info_campaigns.csv"
-        df_info = pd.read_csv(info_file)
-        campaign_info = df_info[df_info["Nombre Corto"] == campaign]
-
-        if campaign_info.empty:
-            raise ValueError(f"No se encontró información para la campaña '{campaign}'.")
-
-        if "DLT Path" not in campaign_info.columns:
-            raise KeyError("La columna 'DLT Path' no existe en el archivo info_campaigns.csv.")
-
-        remote_path = campaign_info.iloc[0]["DLT Path"]
-        if not remote_path:
-            raise ValueError("La ruta remota de DLT no está definida para esta campaña.")
-
-        return remote_path
 
     def back(self):
         if callable(self.back_callback):
@@ -227,6 +184,6 @@ class FetchDLTFiles(QWidget):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    window = FetchDLTFiles()
+    window = SendConfigFilesToRemote()
     window.show()
     sys.exit(app.exec())
