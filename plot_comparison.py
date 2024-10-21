@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
-    QCheckBox, QRadioButton, QApplication, QMessageBox, QGroupBox,
-    QGridLayout
+    QApplication, QMessageBox, QRadioButton, QGroupBox, QGridLayout
 )
 from PySide6.QtCore import Qt
 import pandas as pd
@@ -9,8 +8,7 @@ import os
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from utils import get_existing_campaigns, get_num_detectors
-
+from utils import get_existing_campaigns, get_num_detectors, create_detector_checkboxes
 
 class PlotComparison(QWidget):
     def __init__(self, back_callback=None):
@@ -90,19 +88,18 @@ class PlotComparison(QWidget):
 
         # Selección de detectores
         detectors_label1 = QLabel("Selecciona los detectores para graficar en Campaña 1:")
-        self.detectors_group1 = QGroupBox()
-        self.detectors_layout1 = QGridLayout()
-        self.detectors_group1.setLayout(self.detectors_layout1)
+        self.main_layout.addWidget(detectors_label1)
+
+        self.detectors_widget1 = QWidget()
+        self.detectors_layout1 = QVBoxLayout(self.detectors_widget1)
+        self.main_layout.addWidget(self.detectors_widget1)
 
         detectors_label2 = QLabel("Selecciona los detectores para graficar en Campaña 2:")
-        self.detectors_group2 = QGroupBox()
-        self.detectors_layout2 = QGridLayout()
-        self.detectors_group2.setLayout(self.detectors_layout2)
-
-        self.main_layout.addWidget(detectors_label1)
-        self.main_layout.addWidget(self.detectors_group1)
         self.main_layout.addWidget(detectors_label2)
-        self.main_layout.addWidget(self.detectors_group2)
+
+        self.detectors_widget2 = QWidget()
+        self.detectors_layout2 = QVBoxLayout(self.detectors_widget2)
+        self.main_layout.addWidget(self.detectors_widget2)
 
         self.update_detectors1(self.selected_campaign_plot1.currentText())
         self.update_detectors2(self.selected_campaign_plot2.currentText())
@@ -170,17 +167,13 @@ class PlotComparison(QWidget):
                 widget.setParent(None)
 
         num_detectors = get_num_detectors(campaign_name)
-        self.detector_checkboxes1 = []
-        row = 0
-        col = 0
-        for i in range(num_detectors):
-            checkbox = QCheckBox(f"Detector {i + 1}")
-            self.detector_checkboxes1.append(checkbox)
-            self.detectors_layout1.addWidget(checkbox, row, col)
-            col += 1
-            if col > 3:
-                col = 0
-                row += 1
+        if num_detectors == 0:
+            QMessageBox.warning(self, "Advertencia", f"La campaña '{campaign_name}' no tiene detectores definidos.")
+            return
+
+        # Usar el método create_detector_checkboxes
+        detectors_widget, self.detector_checkboxes1, self.select_all_checkbox1 = create_detector_checkboxes(num_detectors)
+        self.detectors_layout1.addWidget(detectors_widget)
 
     def update_detectors2(self, campaign_name):
         # Limpiar layout de detectores
@@ -190,17 +183,13 @@ class PlotComparison(QWidget):
                 widget.setParent(None)
 
         num_detectors = get_num_detectors(campaign_name)
-        self.detector_checkboxes2 = []
-        row = 0
-        col = 0
-        for i in range(num_detectors):
-            checkbox = QCheckBox(f"Detector {i + 1}")
-            self.detector_checkboxes2.append(checkbox)
-            self.detectors_layout2.addWidget(checkbox, row, col)
-            col += 1
-            if col > 3:
-                col = 0
-                row += 1
+        if num_detectors == 0:
+            QMessageBox.warning(self, "Advertencia", f"La campaña '{campaign_name}' no tiene detectores definidos.")
+            return
+
+        # Usar el método create_detector_checkboxes
+        detectors_widget, self.detector_checkboxes2, self.select_all_checkbox2 = create_detector_checkboxes(num_detectors)
+        self.detectors_layout2.addWidget(detectors_widget)
 
     def compare_plot_data(self):
         campaign_file1 = f"./data/{self.selected_campaign_plot1.currentText()}-CountingRate.csv"
@@ -328,7 +317,6 @@ class PlotComparison(QWidget):
             self.back_callback()
         else:
             self.close()
-
 
 if __name__ == "__main__":
     import sys

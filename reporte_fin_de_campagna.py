@@ -148,11 +148,27 @@ class ReportGenerationThread(QThread):
 
         # Formatear fechas y otros valores
         fecha_inicio = campaign_info.get('Fecha de Inicio', '')
-        fecha_termino = campaign_info.get('Fecha de Termino', '')  # Actualización del nombre de la clave
+        fecha_termino = campaign_info.get('Fecha de Termino', '')
         lugar = campaign_info.get('Lugar', '')
-        num_detectores = campaign_info.get('Número de Detectores', '')  # Actualización del nombre de la clave
+        num_detectores = campaign_info.get('Número de Detectores', '')
         dlt_path = campaign_info.get('DLT Path', '')
         root_path = campaign_info.get('ROOT Path', '')
+
+        # Nuevos campos solicitados
+        latitud = campaign_info.get('Latitud', '')
+        longitud = campaign_info.get('Longitud', '')
+        altura = campaign_info.get('Altitud', '')
+        corte_rigidez = campaign_info.get('Corte de Rigidez Geomagnética', '')
+        b_n = campaign_info.get('B_N', '')
+        b_e = campaign_info.get('B_E', '')
+        b_d = campaign_info.get('B_D', '')
+
+        # Generar enlace a Google Maps
+        if latitud and longitud:
+            google_maps_link = f"https://www.google.com/maps/search/?api=1&query={latitud},{longitud}"
+            mapa_html = f'<a href="{google_maps_link}" color="blue">Ver ubicación en Google Maps</a>'
+        else:
+            mapa_html = 'No disponible'
 
         self.progress.emit(20)
 
@@ -250,7 +266,15 @@ class ReportGenerationThread(QThread):
         <b>Lugar:</b> {lugar}<br/>
         <b>Número de Detectores:</b> {num_detectores}<br/>
         <b>DLT Path:</b> {dlt_path}<br/>
-        <b>ROOT Path:</b> {root_path}
+        <b>ROOT Path:</b> {root_path}<br/>
+        <b>Latitud:</b> {latitud}<br/>
+        <b>Longitud:</b> {longitud}<br/>
+        <b>Altura:</b> {altura}<br/>
+        <b>Corte Vertical de Rigidez Geomagnética:</b> {corte_rigidez}<br/>
+        <b>B_N:</b> {b_n}<br/>
+        <b>B_E:</b> {b_e}<br/>
+        <b>B_D:</b> {b_d}<br/>
+        <b>Mapa:</b> {mapa_html}
         """
         elementos.append(Paragraph(info_general, styles['Texto']))
         elementos.append(PageBreak())  # Salto de página después del capítulo
@@ -355,7 +379,6 @@ class ReportGenerationThread(QThread):
 
         if os.path.exists(incidencias_file):
             df_incidencias = pd.read_csv(incidencias_file)
-            print("Columnas en df_incidencias:", df_incidencias.columns.tolist())  # Depuración
             df_incidencias.sort_values(by=['Fecha y Hora'], inplace=True)
 
             for idx, row in df_incidencias.iterrows():
@@ -429,7 +452,7 @@ class ReportGenerationThread(QThread):
         if os.path.exists(calibration_dir):
             calibration_files = [f for f in os.listdir(calibration_dir) if f.endswith('.csv')]
             if calibration_files:
-                # Ordenar los archivos por fecha y hora en el nombre del archivo (asumiendo formato YYYYMMDD_HHMMSS)
+                # Ordenar los archivos por fecha de modificación
                 calibration_files.sort(key=lambda f: os.path.getmtime(os.path.join(calibration_dir, f)), reverse=True)
                 calibration_file = os.path.join(calibration_dir, calibration_files[0])
                 df_calibration = pd.read_csv(calibration_file)
@@ -465,3 +488,11 @@ class ReportGenerationThread(QThread):
         self.progress.emit(100)
 
         return report_file
+
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+    window = ReporteFinCampagnaWindow()
+    window.show()
+    sys.exit(app.exec())

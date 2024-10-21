@@ -1,15 +1,14 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
-    QCheckBox, QRadioButton, QSlider, QTextEdit, QApplication, QMessageBox, QGroupBox,
-    QGridLayout, QFileDialog
+    QTextEdit, QApplication, QMessageBox, QGroupBox, QSlider
 )
-from PySide6.QtCore import Qt, QDateTime, QTimer
+from PySide6.QtCore import Qt
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from utils import get_existing_campaigns, get_num_detectors
+from utils import get_existing_campaigns, get_num_detectors, create_detector_checkboxes
 
 class NoiseAnalysis(QWidget):
     def __init__(self, back_callback=None):
@@ -46,10 +45,13 @@ class NoiseAnalysis(QWidget):
         self.main_layout.addLayout(campaign_layout)
 
         # Selección de detectores
-        self.detectors_group = QGroupBox("Selecciona los detectores para analizar:")
-        self.detectors_layout = QGridLayout()
-        self.detectors_group.setLayout(self.detectors_layout)
-        self.main_layout.addWidget(self.detectors_group)
+        detectors_label = QLabel("Selecciona los detectores para analizar:")
+        self.main_layout.addWidget(detectors_label)
+
+        # Aquí usaremos el método create_detector_checkboxes
+        self.detectors_widget = QWidget()
+        self.detectors_layout = QVBoxLayout(self.detectors_widget)
+        self.main_layout.addWidget(self.detectors_widget)
 
         # Selección de tiempo promedio de acumulación
         accumulation_layout = QHBoxLayout()
@@ -123,6 +125,9 @@ class NoiseAnalysis(QWidget):
             QTextEdit {
                 font-size: 14px;
             }
+            QCheckBox {
+                font-size: 16px;
+            }
         """)
 
         # Cargar detectores iniciales
@@ -139,17 +144,13 @@ class NoiseAnalysis(QWidget):
                 widget.setParent(None)
 
         num_detectors = get_num_detectors(campaign_name)
-        self.detectors = []
-        row = 0
-        col = 0
-        for i in range(num_detectors):
-            checkbox = QCheckBox(f"Detector {i + 1}")
-            self.detectors.append(checkbox)
-            self.detectors_layout.addWidget(checkbox, row, col)
-            col += 1
-            if col > 3:
-                col = 0
-                row += 1
+        if num_detectors == 0:
+            QMessageBox.warning(self, "Advertencia", f"La campaña '{campaign_name}' no tiene detectores definidos.")
+            return
+
+        # Usar el método create_detector_checkboxes
+        detectors_widget, self.detectors_checkboxes, self.select_all_checkbox = create_detector_checkboxes(num_detectors)
+        self.detectors_layout.addWidget(detectors_widget)
 
     def plot_noise_analysis(self):
         campaign_file = f"./data/{self.selected_campaign.currentText()}-CountingRate.csv"
@@ -159,12 +160,13 @@ class NoiseAnalysis(QWidget):
 
         try:
             df = pd.read_csv(campaign_file)
-            df['timestamp'] = pd.to_datetime(df['timestamp'], format="%Y-%m-%d %H:%M:%S")
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al leer los datos de la campaña: {e}")
             return
 
-        selected_detectors = [i + 1 for i, checkbox in enumerate(self.detectors) if checkbox.isChecked()]
+        # Obtener los detectores seleccionados
+        selected_detectors = [i + 1 for i, checkbox in enumerate(self.detectors_checkboxes) if checkbox.isChecked()]
         if not selected_detectors:
             QMessageBox.critical(self, "Error", "Debe seleccionar al menos un detector.")
             return
@@ -230,12 +232,13 @@ class NoiseAnalysis(QWidget):
 
         try:
             df = pd.read_csv(campaign_file)
-            df['timestamp'] = pd.to_datetime(df['timestamp'], format="%Y-%m-%d %H:%M:%S")
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al leer los datos de la campaña: {e}")
             return
 
-        selected_detectors = [i + 1 for i, checkbox in enumerate(self.detectors) if checkbox.isChecked()]
+        # Obtener los detectores seleccionados
+        selected_detectors = [i + 1 for i, checkbox in enumerate(self.detectors_checkboxes) if checkbox.isChecked()]
         if not selected_detectors:
             QMessageBox.critical(self, "Error", "Debe seleccionar al menos un detector.")
             return
@@ -297,7 +300,7 @@ class NoiseAnalysis(QWidget):
 
         try:
             df = pd.read_csv(campaign_file)
-            df['timestamp'] = pd.to_datetime(df['timestamp'], format="%Y-%m-%d %H:%M:%S")
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al leer los datos de la campaña: {e}")
             return

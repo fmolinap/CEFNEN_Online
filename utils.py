@@ -2,7 +2,8 @@
 
 import os
 import pandas as pd
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget, QVBoxLayout, QCheckBox
+from PySide6.QtCore import Qt
 import paramiko
 from datetime import datetime
 import ROOT
@@ -181,3 +182,59 @@ def get_remote_root_files(ip, remote_path, username, password):
         raise Exception(f"La ruta remota '{remote_path}' no existe.")
     except Exception as e:
         raise Exception(f"Ocurrió un error inesperado: {e}")
+
+# --- Método actualizado para crear las casillas de verificación de detectores con opción "Seleccionar Todos" ---
+
+def create_detector_checkboxes(num_detectors):
+    """
+    Crea un widget que contiene las casillas de verificación para los detectores,
+    incluyendo una casilla para seleccionar todos.
+
+    Args:
+        num_detectors (int): Número total de detectores disponibles.
+
+    Returns:
+        QWidget: Un widget que contiene las casillas de verificación.
+        list: Una lista con las casillas de verificación de los detectores.
+        QCheckBox: La casilla de verificación "Seleccionar Todos".
+    """
+    # Widget contenedor
+    container_widget = QWidget()
+    layout = QVBoxLayout(container_widget)
+
+    # Casilla de verificación "Seleccionar Todos"
+    select_all_checkbox = QCheckBox("Seleccionar Todos")
+    layout.addWidget(select_all_checkbox)
+
+    # Contenedor para las casillas de los detectores
+    detectors_layout = QVBoxLayout()
+    detectors_checkboxes = []
+
+    for i in range(num_detectors):
+        checkbox = QCheckBox(f"Detector {i + 1}")
+        detectors_layout.addWidget(checkbox)
+        detectors_checkboxes.append(checkbox)
+
+    # Conectar la casilla "Seleccionar Todos" con las casillas de detectores
+    def toggle_select_all(checked):
+        for checkbox in detectors_checkboxes:
+            checkbox.blockSignals(True)
+            checkbox.setChecked(checked)
+            checkbox.blockSignals(False)
+        # No es necesario llamar a update_select_all_state aquí
+
+    def update_select_all_state():
+        all_checked = all(cb.isChecked() for cb in detectors_checkboxes)
+        select_all_checkbox.blockSignals(True)
+        select_all_checkbox.setChecked(all_checked)
+        select_all_checkbox.blockSignals(False)
+
+    select_all_checkbox.toggled.connect(toggle_select_all)
+
+    for checkbox in detectors_checkboxes:
+        checkbox.stateChanged.connect(update_select_all_state)
+
+    # Agregar las casillas de detectores al layout principal
+    layout.addLayout(detectors_layout)
+
+    return container_widget, detectors_checkboxes, select_all_checkbox
