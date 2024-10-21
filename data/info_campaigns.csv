@@ -1,12 +1,13 @@
-Numero,Lugar,Fecha de Inicio,Fecha de Termino,Nombre Corto,Número de Detectores,DLT Path,ROOT Path,Latitud,Longitud,Corte de Rigidez Geomagnética,Altitud,B_N,B_E,B_D
-Lab,CEFENEN,24/06/12,24/07/12,Test4det,4,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612-test-4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612-test-4det/rootonline,,,,,,,
-5ta,Antofagasta,24/08/01,24/08/05,UCN-Antofagasta,16,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det/rootfiles,,,,,,,
-test,mi Casa,,,,3,/home/molina,/home/molina/rootfiles,,,,,,,
-1ra,Santiago,24/07/16,24/07/16,PruebaLinux,5,/home/lin/,/home/lin/,,,,,,,
-test,micasa,24/09/20,24/09/21,PruebaCasa,6,/home/molina/dltfiles,/home/molina/rootfiles,,,,,,,
-test,CASA,24/09/20,24/09/21,Casatest,6,/home/molina/dlt_files,/home/molina/root_files,,,,,,,
-Lab,"CEFNEN-CEN La Reina, Santiago Chile",24/09/13,24/09/30,Prueba_125MSPS_4det,4,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240913_test_125_18sep,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240913_test_125_18sep/rootfiles,,,,,,,
-5ta,San Pedro de Atacama,24/11/08,24/11/15,SanPedroAtacama,7,/home/lin/datadlt,/home/lin/dataroot,-22.910832,-68.200138,10.73,,,,
-5ta,Rancagua,24/10/24,24/10/30,Rancagua,3,/home,/home,-34.170249,-70.740743,6.98,350.0,35.98015349156701,19050.415602017674,-1.0093632386725535
-6ta,Rancagua,24/10/24,24/10/30,Rgua2,2,/home,/home,-34.170249,-70.740743,6.98,350.0,35.98015349156701,19050.415602017674,-1.0093632386725535
-8va,Rancagua,24/10/24,24/10/30,Rgua3,4,/,/,-34.170249,-70.740743,6.98,350.0,35.98015349156701,19050.415602017674,-1.0093632386725535
+Numero,Lugar,Fecha de Inicio,Fecha de Termino,Nombre Corto,Número de Detectores,DLT Path,ROOT Path,Latitud,Longitud,Corte de Rigidez Geomagnética,Altitud,B_N,B_E,B_D,Google Maps Link
+Lab,CEFENEN,24/06/12,24/07/12,Test4det,4,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612-test-4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612-test-4det/rootonline,,,,,,,,
+5ta,Antofagasta,24/08/01,24/08/05,UCN-Antofagasta,16,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240612_Test4det/rootfiles,,,,,,,,
+test,mi Casa,,,,3,/home/molina,/home/molina/rootfiles,,,,,,,,
+1ra,Santiago,24/07/16,24/07/16,PruebaLinux,5,/home/lin/,/home/lin/,,,,,,,,
+test,micasa,24/09/20,24/09/21,PruebaCasa,6,/home/molina/dltfiles,/home/molina/rootfiles,,,,,,,,
+test,CASA,24/09/20,24/09/21,Casatest,6,/home/molina/dlt_files,/home/molina/root_files,,,,,,,,
+Lab,"CEFNEN-CEN La Reina, Santiago Chile",24/09/13,24/09/30,Prueba_125MSPS_4det,4,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240913_test_125_18sep,/home/lin/data/EXPERIMENTS_RAW_DATA/2024/CRNS/240913_test_125_18sep/rootfiles,,,,,,,,
+5ta,San Pedro de Atacama,24/11/08,24/11/15,SanPedroAtacama,7,/home/lin/datadlt,/home/lin/dataroot,-22.910832,-68.200138,10.73,,,,,
+5ta,Rancagua,24/10/24,24/10/30,Rancagua,3,/home,/home,-34.170249,-70.740743,6.98,350.0,35.98015349156701,19050.415602017674,-1.0093632386725535,
+6ta,Rancagua,24/10/24,24/10/30,Rgua2,2,/home,/home,-34.170249,-70.740743,6.98,350.0,35.98015349156701,19050.415602017674,-1.0093632386725535,
+8va,Rancagua,24/10/24,24/10/30,Rgua3,4,/,/,-34.170249,-70.740743,6.98,350.0,35.98015349156701,19050.415602017674,-1.0093632386725535,
+4ta,"Pupelde, Chiloé",23/11/20,23/11/30,Pupelde,16,/home/lin/,/home/lin/,-41.887938,-73.799318,4.57,40.0,42.50613657122326,19302.604684049948,-8.546033291525902,"https://www.google.com/maps/search/?api=1&query=-41.887938,-73.799318"

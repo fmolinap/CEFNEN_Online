@@ -267,13 +267,13 @@ class ReportGenerationThread(QThread):
         <b>Número de Detectores:</b> {num_detectores}<br/>
         <b>DLT Path:</b> {dlt_path}<br/>
         <b>ROOT Path:</b> {root_path}<br/>
-        <b>Latitud:</b> {latitud}<br/>
-        <b>Longitud:</b> {longitud}<br/>
-        <b>Altura:</b> {altura}<br/>
-        <b>Corte Vertical de Rigidez Geomagnética:</b> {corte_rigidez}<br/>
-        <b>B_N:</b> {b_n}<br/>
-        <b>B_E:</b> {b_e}<br/>
-        <b>B_D:</b> {b_d}<br/>
+        <b>Latitud Geográfica [º]:</b> {latitud}<br/>
+        <b>Longitud Geográfica [º]:</b> {longitud}<br/>
+        <b>Altura [msnm]:</b> {altura}<br/>
+        <b>Corte Vertical de Rigidez Geomagnética [GV]:</b> {corte_rigidez}<br/>
+        <b>B_N [nT]:</b> {b_n}<br/>
+        <b>B_E [nT]:</b> {b_e}<br/>
+        <b>B_D [nT]:</b> {b_d}<br/>
         <b>Mapa:</b> {mapa_html}
         """
         elementos.append(Paragraph(info_general, styles['Texto']))

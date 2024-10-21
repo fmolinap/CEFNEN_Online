@@ -10,7 +10,6 @@ from geopy.geocoders import Nominatim
 import pyIGRF
 import math
 from datetime import datetime
-import requests
 import urllib.parse
 
 class CrearNuevaCampagna(QWidget):
@@ -348,45 +347,6 @@ class CrearNuevaCampagna(QWidget):
             QMessageBox.critical(self, "Error", f"Error en el cálculo geomagnético: {e}")
             return None
 
-    def save_map_image(self, latitude, longitude, short_name):
-        # Crear el directorio si no existe
-        map_dir = "./Graficos/Mapa"
-        os.makedirs(map_dir, exist_ok=True)
-        file_path = os.path.join(map_dir, f"Mapa_{short_name}.png")
-
-        # Definir el zoom y tamaño de la imagen
-        zoom_level = 13  # Nivel de zoom (0-20)
-        img_width = 800
-        img_height = 600
-
-        # Tu clave de API de Geoapify
-        api_key = "99f95692aa8f4c8d8a2af1d472c85039"  # Reemplaza con tu clave de API de Geoapify
-
-        # Construir la URL de la API de Geoapify
-        base_url = "https://maps.geoapify.com/v1/staticmap"
-        params = {
-            'style': 'osm-carto',
-            'width': img_width,
-            'height': img_height,
-            'center': f'lonlat:{longitude},{latitude}',
-            'zoom': zoom_level,
-            'marker': f'lonlat:{longitude},{latitude};type:material;color:%23ff0000;icon:location_on;size:large',
-            'apiKey': api_key
-        }
-
-        try:
-            response = requests.get(base_url, params=params)
-            if response.status_code == 200:
-                with open(file_path, 'wb') as f:
-                    f.write(response.content)
-                print(f"Mapa guardado en {file_path}")
-            else:
-                QMessageBox.warning(self, "Advertencia", f"No se pudo descargar el mapa. Código de estado: {response.status_code}")
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            QMessageBox.critical(self, "Error", f"Error al descargar el mapa: {e}")
-
     def save_new_campaign(self):
         selected_button = self.campaign_num_group.checkedButton()
         if not selected_button:
@@ -442,6 +402,15 @@ class CrearNuevaCampagna(QWidget):
             QMessageBox.critical(self, "Error", "Latitud, longitud, altitud, rigidez de corte y campos magnéticos deben ser números.")
             return
 
+        # Generar enlace a Google Maps
+        latitud = campaign_info["Latitud"]
+        longitud = campaign_info["Longitud"]
+        if latitud and longitud:
+            google_maps_link = f"https://www.google.com/maps/search/?api=1&query={latitud},{longitud}"
+            campaign_info["Google Maps Link"] = google_maps_link
+        else:
+            campaign_info["Google Maps Link"] = ''
+
         info_file = "./data/info_campaigns.csv"
         os.makedirs("./data", exist_ok=True)
         if not os.path.exists(info_file):
@@ -449,10 +418,13 @@ class CrearNuevaCampagna(QWidget):
                 "Numero", "Lugar", "Latitud", "Longitud", "Altitud", "Corte de Rigidez Geomagnética",
                 "Fecha de Inicio", "Fecha de Termino", "Nombre Corto",
                 "Número de Detectores", "DLT Path", "ROOT Path",
-                "B_N", "B_E", "B_D"
+                "B_N", "B_E", "B_D", "Google Maps Link"
             ])
         else:
             df_info = pd.read_csv(info_file)
+            # Añadir la columna "Google Maps Link" si no existe
+            if "Google Maps Link" not in df_info.columns:
+                df_info["Google Maps Link"] = ''
 
         # Verificar si el nombre corto ya existe
         if campaign_info['Nombre Corto'] in df_info['Nombre Corto'].values:
@@ -463,8 +435,8 @@ class CrearNuevaCampagna(QWidget):
         df_info = pd.concat([df_info, pd.DataFrame([campaign_info])], ignore_index=True)
         df_info.to_csv(info_file, index=False)
 
-        # Guardar la imagen del mapa
-        self.save_map_image(campaign_info["Latitud"], campaign_info["Longitud"], campaign_info["Nombre Corto"])
+        # Ya no es necesario guardar la imagen del mapa
+        # self.save_map_image(campaign_info["Latitud"], campaign_info["Longitud"], campaign_info["Nombre Corto"])
 
         file_name = f"./data/{campaign_info['Nombre Corto']}-CountingRate.csv"
         header = ["timestamp", "dlt_file"]
@@ -485,3 +457,11 @@ class CrearNuevaCampagna(QWidget):
             self.back_callback()
         else:
             print("Error: back_callback no es callable")
+
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+    window = CrearNuevaCampagna()
+    window.show()
+    sys.exit(app.exec())
