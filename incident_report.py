@@ -1,3 +1,5 @@
+# incident_report.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
     QComboBox, QTextEdit, QFileDialog, QListWidget, QInputDialog, QListWidgetItem, QApplication
@@ -8,10 +10,11 @@ import pandas as pd
 from datetime import datetime
 
 class IncidentReport(QWidget):
-    def __init__(self, back_callback=None):
+    def __init__(self, back_callback=None, last_dlt_file=""):
         super().__init__()
         self.back_callback = back_callback
         self.graph_options = []
+        self.last_dlt_file = last_dlt_file  # Almacenar el último archivo DLT
         self.init_ui()
 
     def init_ui(self):
@@ -21,7 +24,7 @@ class IncidentReport(QWidget):
         main_layout.setAlignment(Qt.AlignTop)
 
         # Título
-        title_label = QLabel("Bitacora de Campaña y Reporte de Incidencias")
+        title_label = QLabel("Bitácora de Campaña y Reporte de Incidencias")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         main_layout.addWidget(title_label)
@@ -53,7 +56,7 @@ class IncidentReport(QWidget):
         incident_type_label = QLabel("Tipo de Incidencia:")
         self.incident_type = QComboBox()
         incident_types = [
-            "Inicio de Turno", "Término de Turno", "Inicio de Campaña", "Término de Campaña",
+            "Inicio de Turno", "Monitoreo Regular durante Turno", "Término de Turno", "Inicio de Campaña", "Término de Campaña",
             "Detención Adquisición", "Reinicio Adquisición", "Problemas de Calibración",
             "Problemas de Ruido", "Problemas Eléctricos", "Mejoras siguiente campaña",
             "Problemas de Adquisición Hardware", "Problemas de Adquisición Software",
@@ -68,6 +71,7 @@ class IncidentReport(QWidget):
         dlt_layout = QHBoxLayout()
         dlt_label = QLabel("Archivo DLT Actual:")
         self.dlt_file = QLineEdit()
+        self.dlt_file.setText(self.last_dlt_file)  # Establecer el último archivo DLT
         dlt_layout.addWidget(dlt_label)
         dlt_layout.addWidget(self.dlt_file)
         form_layout.addLayout(dlt_layout)
@@ -76,7 +80,7 @@ class IncidentReport(QWidget):
         responsible_layout = QHBoxLayout()
         responsible_label = QLabel("Responsable de Turno:")
         self.responsible_person = QComboBox()
-        responsible_persons = ["Francisco Molina", "Marcelo Zambra", "Jaime Romero", "Franco Lopez", "Otro"]
+        responsible_persons = ["Francisco Molina", "Marcelo Zambra", "Jaime Romero", "Franco Lopez", "Javier Ruiz", "Otro"]
         self.responsible_person.addItems(responsible_persons)
         responsible_layout.addWidget(responsible_label)
         responsible_layout.addWidget(self.responsible_person)
@@ -160,9 +164,9 @@ class IncidentReport(QWidget):
         if graph_type == "Plot Counting Rate":
             directory = f"./Graficos/{campaign}"
         elif graph_type == "Plot Comparison":
-            directory = "./Graficos/Comparison"
+            directory = f"./Graficos/Comparison/{campaign}"
         elif graph_type == "Nueva LookUpTable":
-            directory = "./Graficos/Lookuptable"
+            directory = f"./Graficos/Lookuptable/{campaign}"
         else:
             directory = f"./Graficos/NoiseAnalysis/{campaign}"
 
@@ -203,11 +207,9 @@ class IncidentReport(QWidget):
         else:
             df_incidents = pd.DataFrame(columns=columns)
 
-        # Utilizar pd.concat en lugar de append
         df_incidents = pd.concat([df_incidents, pd.DataFrame([new_incident])], ignore_index=True)
-
         df_incidents.to_csv(file_name, index=False)
-        QMessageBox.information(self, "Información", "IEntrada en Bitácora guardada correctamente.")
+        QMessageBox.information(self, "Información", "Entrada en Bitácora guardada correctamente.")
         self.load_incidents()
         self.clear_form()
 
@@ -238,7 +240,7 @@ class IncidentReport(QWidget):
         self.timestamp_value.setText(incident_data["Fecha y Hora"])
         self.incident_type.setCurrentText(incident_data["Tipo de Incidencia"])
 
-        # **Corrección: Convertir Archivo DLT a cadena si es necesario**
+        # Convertir Archivo DLT a cadena si es necesario
         dlt_value = incident_data["Archivo DLT"]
         if not isinstance(dlt_value, str):
             dlt_value = str(dlt_value)
@@ -273,7 +275,7 @@ class IncidentReport(QWidget):
     def clear_form(self):
         self.timestamp_value.setText(datetime.now().strftime("%Y-%m-%d %H:%M"))
         self.incident_type.setCurrentIndex(0)
-        self.dlt_file.clear()
+        self.dlt_file.setText(self.last_dlt_file)  # Restablecer el último archivo DLT
         self.responsible_person.setCurrentIndex(0)
         self.incident_description.clear()
         self.graph_files = []

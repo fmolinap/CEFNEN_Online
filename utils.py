@@ -16,6 +16,16 @@ def get_existing_campaigns():
     df_info = pd.read_csv(info_file)
     return df_info["Nombre Corto"].tolist()
 
+def get_campaign_info(short_name):
+    info_file = "./data/info_campaigns.csv"
+    if not os.path.exists(info_file):
+        return None
+    df_info = pd.read_csv(info_file)
+    campaign_info = df_info[df_info["Nombre Corto"] == short_name]
+    if campaign_info.empty:
+        return None
+    return campaign_info.iloc[0].to_dict()
+
 def get_num_detectors(short_name):
     info_file = "./data/info_campaigns.csv"
     if not os.path.exists(info_file):
@@ -30,16 +40,6 @@ def get_num_detectors(short_name):
         return 0
 
     return int(row['Número de Detectores'].values[0])
-
-def get_campaign_info(short_name):
-    info_file = "./data/info_campaigns.csv"
-    if not os.path.exists(info_file):
-        return None
-    df_info = pd.read_csv(info_file)
-    campaign_info = df_info[df_info["Nombre Corto"] == short_name]
-    if campaign_info.empty:
-        return None
-    return campaign_info.iloc[0].to_dict()
 
 def get_remote_path(campaign, file_type="ROOT"):
     info_file = "./data/info_campaigns.csv"
@@ -183,8 +183,6 @@ def get_remote_root_files(ip, remote_path, username, password):
     except Exception as e:
         raise Exception(f"Ocurrió un error inesperado: {e}")
 
-# --- Método actualizado para crear las casillas de verificación de detectores con opción "Seleccionar Todos" ---
-
 def create_detector_checkboxes(num_detectors):
     """
     Crea un widget que contiene las casillas de verificación para los detectores,
@@ -221,7 +219,6 @@ def create_detector_checkboxes(num_detectors):
             checkbox.blockSignals(True)
             checkbox.setChecked(checked)
             checkbox.blockSignals(False)
-        # No es necesario llamar a update_select_all_state aquí
 
     def update_select_all_state():
         all_checked = all(cb.isChecked() for cb in detectors_checkboxes)

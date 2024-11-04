@@ -2,7 +2,7 @@
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QFrame, QGroupBox, QSizePolicy, QGridLayout
+    QFrame, QGroupBox, QSizePolicy, QGridLayout, QMessageBox, QLineEdit, QDialog
 )
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
@@ -23,8 +23,12 @@ from send_offline_config_files import SendOfflineConfigFiles
 from lookuptable_setup import LookUpTableSetup
 # from edit_materials import EditMaterials
 from incident_report import IncidentReport
-from reporte_fin_de_campagna import ReporteFinCampagnaWindow  
+from reporte_fin_de_campagna import ReporteFinCampagnaWindow
 from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC  # Importar el nuevo archivo
+
+# Importar funciones y clases adicionales
+from monitoreo_archivos_remotos import MonitoringThread, MonitoringDialog
+from utils import get_campaign_info
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -43,6 +47,8 @@ class MainApp(QMainWindow):
         )
         self.logo_image = ImageQt.ImageQt(resized_image)
         self.logo_pixmap = QPixmap.fromImage(self.logo_image)
+
+        self.monitoring_thread = None
 
         self.create_main_window()
 
@@ -102,6 +108,7 @@ class MainApp(QMainWindow):
         self.create_section_frame("Calibraciones", self.create_calibration_buttons, sections_layout, 1, 0)
         self.create_section_frame("Análisis", self.create_analysis_buttons, sections_layout, 1, 1)
         self.create_section_frame("Gestión de Archivos", self.create_file_management_buttons, sections_layout, 2, 0, 1, 2)
+        self.create_section_frame("Monitoreo", self.create_monitoring_controls, sections_layout, 3, 0, 1, 2)
 
         main_layout.addStretch()
 
@@ -213,6 +220,82 @@ class MainApp(QMainWindow):
 
         layout.addStretch()
 
+    def create_monitoring_controls(self, layout):
+        self.monitor_button = QPushButton("Monitorear Archivos Remotos")
+        self.monitor_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.monitor_button.setCheckable(True)
+        self.monitor_button.clicked.connect(self.toggle_monitoring)
+        layout.addWidget(self.monitor_button)
+
+        # Crear una etiqueta para mostrar el estado del monitoreo
+        self.monitor_status_label = QLabel("Monitoreo: <font color='red'>OFF</font>")
+        self.monitor_status_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.monitor_status_label)
+
+        # Etiquetas para mostrar los últimos archivos
+        self.last_root_label = QLabel("Último archivo ROOT: N/A")
+        self.last_root_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.last_root_label)
+
+        self.last_dlt_label = QLabel("Último archivo DLT: N/A")
+        self.last_dlt_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.last_dlt_label)
+
+        layout.addStretch()
+
+    def toggle_monitoring(self, checked):
+        if checked:
+            self.start_monitoring()
+        else:
+            self.stop_monitoring()
+
+    def start_monitoring(self):
+        dialog = MonitoringDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            campaign, ip, username, password = dialog.get_monitoring_info()
+
+            campaign_info = get_campaign_info(campaign)
+            if campaign_info is None:
+                QMessageBox.critical(self, "Error", f"No se pudo obtener la información para la campaña '{campaign}'.")
+                self.monitor_button.setChecked(False)
+                return
+
+            root_path = campaign_info.get('ROOT Path')
+            dlt_path = campaign_info.get('DLT Path')
+
+            # Iniciar el hilo de monitoreo
+            self.monitoring_thread = MonitoringThread(ip, username, password, root_path, dlt_path)
+            self.monitoring_thread.monitoring_status_changed.connect(self.update_monitor_status)
+            self.monitoring_thread.error_signal.connect(self.handle_monitoring_error)
+            self.monitoring_thread.new_files_detected.connect(self.update_last_files)
+            self.monitoring_thread.start()
+            self.update_monitor_status(True)
+        else:
+            self.monitor_button.setChecked(False)
+
+    def stop_monitoring(self):
+        if hasattr(self, 'monitoring_thread') and self.monitoring_thread is not None and self.monitoring_thread.isRunning():
+            self.monitoring_thread.stop()
+            self.monitoring_thread.wait()
+        self.update_monitor_status(False)
+
+    def update_monitor_status(self, status):
+        if status:
+            self.monitor_status_label.setText("Monitoreo: <font color='green'>ON</font>")
+        else:
+            self.monitor_status_label.setText("Monitoreo: <font color='red'>OFF</font>")
+            self.monitor_button.setChecked(False)
+            self.last_root_label.setText("Último archivo ROOT: N/A")
+            self.last_dlt_label.setText("Último archivo DLT: N/A")
+
+    def handle_monitoring_error(self, error_message):
+        QMessageBox.critical(self, "Error en el Monitoreo", f"Ocurrió un error durante el monitoreo:\n{error_message}")
+        self.update_monitor_status(False)
+
+    def update_last_files(self, last_root_file, last_dlt_file):
+        self.last_root_label.setText(f"Último archivo ROOT: {last_root_file}")
+        self.last_dlt_label.setText(f"Último archivo DLT: {last_dlt_file}")
+
     # Métodos para abrir las diferentes ventanas
     def open_create_campaign(self):
         self.clear_central_widget()
@@ -251,7 +334,11 @@ class MainApp(QMainWindow):
 
     def open_incident_report(self):
         self.clear_central_widget()
-        incident_report = IncidentReport(back_callback=self.create_main_window)
+        # Obtener el último archivo DLT desde la etiqueta
+        last_dlt_file = self.last_dlt_label.text().replace("Último archivo DLT: ", "")
+        if last_dlt_file == "N/A":
+            last_dlt_file = ""
+        incident_report = IncidentReport(back_callback=self.create_main_window, last_dlt_file=last_dlt_file)
         self.setCentralWidget(incident_report)
 
     def open_lookup_table_setup(self):
@@ -305,10 +392,12 @@ class MainApp(QMainWindow):
             current_widget.deleteLater()
         self.setCentralWidget(QWidget())
 
-
-if __name__ == "__main__":
+def main():
     import sys
     app = QApplication(sys.argv)
     window = MainApp()
     window.show()
     sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main()

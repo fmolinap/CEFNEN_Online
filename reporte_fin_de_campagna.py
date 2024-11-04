@@ -387,11 +387,12 @@ class ReportGenerationThread(QThread):
                 titulo_incidencia = f"- {fecha}: {tipo}"
                 elementos.append(Paragraph(titulo_incidencia, styles['Subtitulo']))
 
-                # Obtener la descripción y el responsable de turno
+                # Obtener la descripción, responsable de turno y archivo DLT
                 descripcion_incidencia = row.get('Descripción de Incidencia') or row.get('Descripcion de Incidencia') or 'Descripción no disponible'
                 responsable_turno = row.get('Responsable de Turno') or row.get('Responsable') or 'Desconocido'
+                archivo_dlt = row.get('Archivo DLT', 'No disponible')
 
-                descripcion = f"{descripcion_incidencia}<br/><b>Responsable de Turno:</b> {responsable_turno}"
+                descripcion = f"{descripcion_incidencia}<br/><b>Responsable de Turno:</b> {responsable_turno}<br/><b>Archivo DLT:</b> {archivo_dlt}"
                 elementos.append(Paragraph(descripcion, styles['Texto']))
 
                 # Agregar gráficos si existen
@@ -454,28 +455,31 @@ class ReportGenerationThread(QThread):
             if calibration_files:
                 # Ordenar los archivos por fecha de modificación
                 calibration_files.sort(key=lambda f: os.path.getmtime(os.path.join(calibration_dir, f)), reverse=True)
-                calibration_file = os.path.join(calibration_dir, calibration_files[0])
-                df_calibration = pd.read_csv(calibration_file)
-                data = [df_calibration.columns.tolist()] + df_calibration.values.tolist()
+                
+                for calibration_file_name in calibration_files:
+                    calibration_file = os.path.join(calibration_dir, calibration_file_name)
+                    df_calibration = pd.read_csv(calibration_file)
+                    data = [df_calibration.columns.tolist()] + df_calibration.values.tolist()
 
-                # Calcular el ancho de cada columna proporcionalmente
-                num_cols = len(data[0])
-                col_width = available_width / num_cols
-                col_widths = [col_width] * num_cols
+                    # Calcular el ancho de cada columna proporcionalmente
+                    num_cols = len(data[0])
+                    col_width = available_width / num_cols
+                    col_widths = [col_width] * num_cols
 
-                # Crear la tabla con tamaños ajustados y fuente de 6pt
-                tabla_calibracion = Table(data, colWidths=col_widths, repeatRows=1)
-                tabla_calibracion.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 6),  # Fuente ajustada a 6pt
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
-                    ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
-                ]))
-                elementos.append(Paragraph(f"Archivo de Calibración: {os.path.basename(calibration_file)}", styles['Subtitulo']))
-                elementos.append(tabla_calibracion)
+                    # Crear la tabla con tamaños ajustados y fuente de 6pt
+                    tabla_calibracion = Table(data, colWidths=col_widths, repeatRows=1)
+                    tabla_calibracion.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0, 0), (-1, -1), 6),  # Fuente ajustada a 6pt
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+                        ('GRID', (0, 0), (-1, -1), 0.25, colors.black),
+                    ]))
+                    elementos.append(Paragraph(f"Archivo de Calibración: {os.path.basename(calibration_file)}", styles['Subtitulo']))
+                    elementos.append(tabla_calibracion)
+                    elementos.append(Spacer(1,12))  # Espacio entre tablas
             else:
                 elementos.append(Paragraph("No se encontraron archivos de calibración.", styles['Texto']))
         else:
