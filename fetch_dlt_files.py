@@ -1,5 +1,7 @@
+# fetch_dlt_files.py
+
 from PySide6.QtWidgets import (
-    QWidget, QLabel, QLineEdit, QPushButton, QMessageBox,  QLayout, QVBoxLayout, QHBoxLayout,
+    QWidget, QLabel, QLineEdit, QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
     QComboBox, QTextEdit, QInputDialog, QApplication, QProgressBar, QFileDialog
 )
 from PySide6.QtCore import Qt, QThread, Signal
@@ -12,6 +14,9 @@ class FetchDLTFiles(QWidget):
     def __init__(self, back_callback=None):
         super().__init__()
         self.back_callback = back_callback
+        self.DEFAULT_IP = "192.168.0.107"
+        self.DEFAULT_USER = "lin"
+        self.DEFAULT_PASSWORD = "linrulez"  # Aquí puedes poner la contraseña por defecto
         self.init_ui()
 
     def init_ui(self):
@@ -30,9 +35,9 @@ class FetchDLTFiles(QWidget):
         form_layout = QVBoxLayout()
         main_layout.addLayout(form_layout)
 
-        self.ip_entry = QLineEdit("192.168.0.107")
+        self.ip_entry = QLineEdit(self.DEFAULT_IP)
         self.port_entry = QLineEdit("22")
-        self.user_entry = QLineEdit("lin")
+        self.user_entry = QLineEdit(self.DEFAULT_USER)
 
         form_layout.addWidget(self.create_form_row("IP del PC de Adquisición:", self.ip_entry))
         form_layout.addWidget(self.create_form_row("Puerto:", self.port_entry))
@@ -41,7 +46,10 @@ class FetchDLTFiles(QWidget):
         # Selección de campaña
         self.selected_campaign = QComboBox()
         self.campaigns = self.get_existing_campaigns()
-        self.selected_campaign.addItems(self.campaigns)
+        if self.campaigns:
+            self.selected_campaign.addItems(self.campaigns)
+        else:
+            self.selected_campaign.addItem("No hay campañas disponibles")
         form_layout.addWidget(self.create_form_row("Seleccionar Campaña:", self.selected_campaign))
 
         # Selección de ruta local
@@ -111,7 +119,7 @@ class FetchDLTFiles(QWidget):
         label = QLabel(label_text)
         label.setFixedWidth(200)
         row_layout.addWidget(label)
-        if isinstance(widget, QLayout):
+        if isinstance(widget, QHBoxLayout):
             container = QWidget()
             container.setLayout(widget)
             row_layout.addWidget(container)
@@ -142,10 +150,14 @@ class FetchDLTFiles(QWidget):
             QMessageBox.critical(self, "Error", "Todos los campos son obligatorios.")
             return
 
-        password, ok = QInputDialog.getText(self, "Contraseña", "Ingrese la contraseña:", echo=QLineEdit.Password)
-        if not ok or not password:
-            QMessageBox.critical(self, "Error", "Contraseña no ingresada.")
-            return
+        # Si la IP y el usuario coinciden con los valores predeterminados, usar la contraseña por defecto
+        if ip == self.DEFAULT_IP and user == self.DEFAULT_USER:
+            password = self.DEFAULT_PASSWORD
+        else:
+            password, ok = QInputDialog.getText(self, "Contraseña", "Ingrese la contraseña:", echo=QLineEdit.Password)
+            if not ok or not password:
+                QMessageBox.critical(self, "Error", "Contraseña no ingresada.")
+                return
 
         try:
             remote_path = self.get_remote_dlt_path(campaign)
@@ -187,6 +199,7 @@ class FetchDLTFiles(QWidget):
 
     def show_error(self, error_text):
         self.progress_text.append(f"\nError: {error_text}\n")
+        QMessageBox.critical(self, "Error", f"Ocurrió un error durante la transferencia:\n{error_text}")
 
     def transfer_finished(self, success):
         if success:
@@ -222,7 +235,7 @@ class FetchDLTFiles(QWidget):
         if callable(self.back_callback):
             self.back_callback()
         else:
-            print("Error: back_callback no es callable")
+            self.close()
 
 if __name__ == "__main__":
     import sys

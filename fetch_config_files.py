@@ -1,3 +1,5 @@
+# fetch_config_files.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
     QTextEdit, QInputDialog, QApplication, QProgressBar
@@ -11,6 +13,9 @@ class FetchConfigFiles(QWidget):
     def __init__(self, back_callback=None):
         super().__init__()
         self.back_callback = back_callback
+        self.DEFAULT_IP = "192.168.0.107"
+        self.DEFAULT_USER = "lin"
+        self.DEFAULT_PASSWORD = "linrulez"  # Aquí puedes poner la contraseña por defecto
         self.init_ui()
 
     def init_ui(self):
@@ -29,9 +34,9 @@ class FetchConfigFiles(QWidget):
         form_layout = QVBoxLayout()
         main_layout.addLayout(form_layout)
 
-        self.ip_entry = QLineEdit("192.168.0.107")
+        self.ip_entry = QLineEdit(self.DEFAULT_IP)
         self.port_entry = QLineEdit("22")
-        self.user_entry = QLineEdit("lin")
+        self.user_entry = QLineEdit(self.DEFAULT_USER)
 
         form_layout.addWidget(self.create_form_row("IP del PC de Adquisición:", self.ip_entry))
         form_layout.addWidget(self.create_form_row("Puerto:", self.port_entry))
@@ -107,10 +112,14 @@ class FetchConfigFiles(QWidget):
             QMessageBox.critical(self, "Error", "Todos los campos son obligatorios.")
             return
 
-        password, ok = QInputDialog.getText(self, "Contraseña", "Ingrese la contraseña:", echo=QLineEdit.Password)
-        if not ok or not password:
-            QMessageBox.critical(self, "Error", "Contraseña no ingresada.")
-            return
+        # Si la IP y el usuario coinciden con los valores predeterminados, usar la contraseña por defecto
+        if ip == self.DEFAULT_IP and user == self.DEFAULT_USER:
+            password = self.DEFAULT_PASSWORD
+        else:
+            password, ok = QInputDialog.getText(self, "Contraseña", "Ingrese la contraseña:", echo=QLineEdit.Password)
+            if not ok or not password:
+                QMessageBox.critical(self, "Error", "Contraseña no ingresada.")
+                return
 
         remote_path = "/home/lin/data/EXPERIMENTS_RAW_DATA/2024/ConfigFiles2024"
         local_path = "./calibration/ConfigFiles2024"
@@ -148,6 +157,7 @@ class FetchConfigFiles(QWidget):
 
     def show_error(self, error_text):
         self.progress_text.append(f"\nError: {error_text}\n")
+        QMessageBox.critical(self, "Error", f"Ocurrió un error durante la transferencia:\n{error_text}")
 
     def transfer_finished(self, success):
         if success:
@@ -166,7 +176,7 @@ class FetchConfigFiles(QWidget):
         if callable(self.back_callback):
             self.back_callback()
         else:
-            print("Error: back_callback no es callable")
+            self.close()
 
 if __name__ == "__main__":
     import sys

@@ -74,16 +74,15 @@ class MainApp(QMainWindow):
         logo_label.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(logo_label)
 
-        title_label = QLabel("CEFNEN Online Analysis \nExperimental Campaigns")
+        title_label = QLabel("CEFNEN Online Analysis Experimental Campaigns")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         header_layout.addWidget(title_label)
 
         # Subtítulo
         subtitle_label = QLabel(
-            "Este es el programa de análisis online de las campañas experimentales de CEFNEN. "
-            "Ha sido desarrollado en 2024 para facilitar el análisis online de los datos "
-            "de las Campañas en terreno."
+            "Programa de análisis online de las campañas experimentales de CEFNEN. fmolinap2024"
+           
         )
         subtitle_label.setWordWrap(True)
         subtitle_label.setAlignment(Qt.AlignCenter)
