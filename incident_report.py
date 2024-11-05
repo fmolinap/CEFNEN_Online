@@ -168,7 +168,7 @@ class IncidentReport(QWidget):
         elif graph_type == "Nueva LookUpTable":
             directory = f"./Graficos/Lookuptable/{campaign}"
         else:
-            directory = f"./Graficos/NoiseAnalysis/{campaign}"
+            directory = f"./Graficos/Noise_analysis/"
 
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Seleccionar Archivo Gráfico", directory, "PNG files (*.png)"

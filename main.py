@@ -2,7 +2,8 @@
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QFrame, QGroupBox, QSizePolicy, QGridLayout, QMessageBox, QLineEdit, QDialog
+    QFrame, QGroupBox, QSizePolicy, QGridLayout, QMessageBox, QLineEdit, QDialog,
+    QStackedWidget, QScrollArea
 )
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
@@ -21,10 +22,9 @@ from fetch_config_files import FetchConfigFiles
 from send_config_files_to_remote import SendConfigFilesToRemote
 from send_offline_config_files import SendOfflineConfigFiles
 from lookuptable_setup import LookUpTableSetup
-# from edit_materials import EditMaterials
 from incident_report import IncidentReport
 from reporte_fin_de_campagna import ReporteFinCampagnaWindow
-from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC  # Importar el nuevo archivo
+from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC
 
 # Importar funciones y clases adicionales
 from monitoreo_archivos_remotos import MonitoringThread, MonitoringDialog
@@ -50,22 +50,24 @@ class MainApp(QMainWindow):
 
         self.monitoring_thread = None
 
-        self.create_main_window()
+        self.init_ui()
 
-    def create_main_window(self):
+    def init_ui(self):
         # Crear el widget central
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
         # Crear el layout principal
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
         central_widget.setLayout(main_layout)
+
+        # Sección superior: Controles de monitoreo y título
+        top_layout = QVBoxLayout()
+        main_layout.addLayout(top_layout)
 
         # Logo y Título
         header_layout = QVBoxLayout()
-        main_layout.addLayout(header_layout)
+        top_layout.addLayout(header_layout)
 
         logo_label = QLabel()
         logo_label.setPixmap(self.logo_pixmap)
@@ -86,15 +88,39 @@ class MainApp(QMainWindow):
         subtitle_label.setWordWrap(True)
         subtitle_label.setAlignment(Qt.AlignCenter)
         subtitle_label.setStyleSheet("font-size: 14px;")
-        main_layout.addWidget(subtitle_label)
+        header_layout.addWidget(subtitle_label)
 
-        main_layout.addStretch()
+        # Controles de monitoreo
+        self.create_monitoring_controls(top_layout)
 
         # Separador
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
-        main_layout.addWidget(separator)
+        top_layout.addWidget(separator)
+
+        # Sección central: Área de contenido cambiante con scroll
+        content_scroll_area = QScrollArea()
+        content_scroll_area.setWidgetResizable(True)
+        main_layout.addWidget(content_scroll_area)
+
+        self.content_widget = QStackedWidget()
+        content_scroll_area.setWidget(self.content_widget)
+
+        # Añadir la ventana principal al QStackedWidget
+        self.main_window_widget = QWidget()
+        self.create_main_window_ui(self.main_window_widget)
+        self.content_widget.addWidget(self.main_window_widget)
+
+        # Mostrar la ventana principal
+        self.content_widget.setCurrentWidget(self.main_window_widget)
+
+    def create_main_window_ui(self, parent_widget):
+        # Crear el layout principal
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
+        parent_widget.setLayout(main_layout)
 
         # Layout para las secciones
         sections_layout = QGridLayout()
@@ -108,7 +134,6 @@ class MainApp(QMainWindow):
         self.create_section_frame("Calibraciones", self.create_calibration_buttons, sections_layout, 1, 0)
         self.create_section_frame("Análisis", self.create_analysis_buttons, sections_layout, 1, 1)
         self.create_section_frame("Gestión de Archivos", self.create_file_management_buttons, sections_layout, 2, 0, 1, 2)
-        self.create_section_frame("Monitoreo", self.create_monitoring_controls, sections_layout, 3, 0, 1, 2)
 
         main_layout.addStretch()
 
@@ -221,16 +246,24 @@ class MainApp(QMainWindow):
         layout.addStretch()
 
     def create_monitoring_controls(self, layout):
-        self.monitor_button = QPushButton("Monitorear Archivos Remotos")
-        self.monitor_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.monitor_button.setCheckable(True)
-        self.monitor_button.clicked.connect(self.toggle_monitoring)
-        layout.addWidget(self.monitor_button)
+        monitor_layout = QHBoxLayout()
 
-        # Crear una etiqueta para mostrar el estado del monitoreo
+        self.start_monitor_button = QPushButton("Iniciar Monitoreo")
+        self.start_monitor_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.start_monitor_button.clicked.connect(self.start_monitoring)
+        monitor_layout.addWidget(self.start_monitor_button)
+
+        self.stop_monitor_button = QPushButton("Terminar Monitoreo")
+        self.stop_monitor_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.stop_monitor_button.clicked.connect(self.stop_monitoring)
+        self.stop_monitor_button.setEnabled(False)  # Deshabilitado inicialmente
+        monitor_layout.addWidget(self.stop_monitor_button)
+
         self.monitor_status_label = QLabel("Monitoreo: <font color='red'>OFF</font>")
         self.monitor_status_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.monitor_status_label)
+        monitor_layout.addWidget(self.monitor_status_label)
+
+        layout.addLayout(monitor_layout)
 
         # Etiquetas para mostrar los últimos archivos
         self.last_root_label = QLabel("Último archivo ROOT: N/A")
@@ -241,14 +274,6 @@ class MainApp(QMainWindow):
         self.last_dlt_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.last_dlt_label)
 
-        layout.addStretch()
-
-    def toggle_monitoring(self, checked):
-        if checked:
-            self.start_monitoring()
-        else:
-            self.stop_monitoring()
-
     def start_monitoring(self):
         dialog = MonitoringDialog(self)
         if dialog.exec() == QDialog.Accepted:
@@ -257,7 +282,6 @@ class MainApp(QMainWindow):
             campaign_info = get_campaign_info(campaign)
             if campaign_info is None:
                 QMessageBox.critical(self, "Error", f"No se pudo obtener la información para la campaña '{campaign}'.")
-                self.monitor_button.setChecked(False)
                 return
 
             root_path = campaign_info.get('ROOT Path')
@@ -271,7 +295,7 @@ class MainApp(QMainWindow):
             self.monitoring_thread.start()
             self.update_monitor_status(True)
         else:
-            self.monitor_button.setChecked(False)
+            pass  # El usuario canceló el diálogo
 
     def stop_monitoring(self):
         if hasattr(self, 'monitoring_thread') and self.monitoring_thread is not None and self.monitoring_thread.isRunning():
@@ -282,9 +306,12 @@ class MainApp(QMainWindow):
     def update_monitor_status(self, status):
         if status:
             self.monitor_status_label.setText("Monitoreo: <font color='green'>ON</font>")
+            self.start_monitor_button.setEnabled(False)
+            self.stop_monitor_button.setEnabled(True)
         else:
             self.monitor_status_label.setText("Monitoreo: <font color='red'>OFF</font>")
-            self.monitor_button.setChecked(False)
+            self.start_monitor_button.setEnabled(True)
+            self.stop_monitor_button.setEnabled(False)
             self.last_root_label.setText("Último archivo ROOT: N/A")
             self.last_dlt_label.setText("Último archivo DLT: N/A")
 
@@ -298,99 +325,83 @@ class MainApp(QMainWindow):
 
     # Métodos para abrir las diferentes ventanas
     def open_create_campaign(self):
-        self.clear_central_widget()
-        crear_campagna = CrearNuevaCampagna(back_callback=self.create_main_window)
-        self.setCentralWidget(crear_campagna)
+        widget = CrearNuevaCampagna(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_add_data(self):
-        self.clear_central_widget()
-        agregar_datos = AgregarDatos(back_callback=self.create_main_window)
-        self.setCentralWidget(agregar_datos)
+        widget = AgregarDatos(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_fetch_root_files(self):
-        self.clear_central_widget()
-        fetch_root_files = FetchRootFiles(back_callback=self.create_main_window)
-        self.setCentralWidget(fetch_root_files)
+        widget = FetchRootFiles(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_fetch_dlt_files(self):
-        self.clear_central_widget()
-        fetch_dlt_files = FetchDLTFiles(back_callback=self.create_main_window)
-        self.setCentralWidget(fetch_dlt_files)
+        widget = FetchDLTFiles(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_fetch_config_files(self):
-        self.clear_central_widget()
-        fetch_config_files = FetchConfigFiles(back_callback=self.create_main_window)
-        self.setCentralWidget(fetch_config_files)
+        widget = FetchConfigFiles(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_send_config_files_to_remote(self):
-        self.clear_central_widget()
-        send_config_files = SendConfigFilesToRemote(back_callback=self.create_main_window)
-        self.setCentralWidget(send_config_files)
+        widget = SendConfigFilesToRemote(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_send_offline_config_files(self):
-        self.clear_central_widget()
-        send_offline_config_files = SendOfflineConfigFiles(back_callback=self.create_main_window)
-        self.setCentralWidget(send_offline_config_files)
+        widget = SendOfflineConfigFiles(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_incident_report(self):
-        self.clear_central_widget()
         # Obtener el último archivo DLT desde la etiqueta
         last_dlt_file = self.last_dlt_label.text().replace("Último archivo DLT: ", "")
         if last_dlt_file == "N/A":
             last_dlt_file = ""
-        incident_report = IncidentReport(back_callback=self.create_main_window, last_dlt_file=last_dlt_file)
-        self.setCentralWidget(incident_report)
+        widget = IncidentReport(back_callback=self.return_to_main_window, last_dlt_file=last_dlt_file)
+        self.show_new_widget(widget)
 
     def open_lookup_table_setup(self):
-        self.clear_central_widget()
-        lookup_table_setup = LookUpTableSetup(back_callback=self.create_main_window)
-        self.setCentralWidget(lookup_table_setup)
+        widget = LookUpTableSetup(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_plot_cr_evo(self):
-        self.clear_central_widget()
-        plot_cr_evo = PlotCREvo(back_callback=self.create_main_window)
-        self.setCentralWidget(plot_cr_evo)
+        widget = PlotCREvo(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_plot_comparison(self):
-        self.clear_central_widget()
-        plot_comparison = PlotComparison(back_callback=self.create_main_window)
-        self.setCentralWidget(plot_comparison)
+        widget = PlotComparison(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_calibrate(self):
-        self.clear_central_widget()
-        calibrate_widget = Calibrate(back_callback=self.create_main_window)
-        self.setCentralWidget(calibrate_widget)
+        widget = Calibrate(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_calibration_from_root(self):
-        self.clear_central_widget()
-        calibration_widget = CalibrationRoot(back_callback=self.create_main_window)
-        self.setCentralWidget(calibration_widget)
+        widget = CalibrationRoot(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_recalibrate_root(self):
-        self.clear_central_widget()
-        recalibrate_root = RecalibrateRoot(back_callback=self.create_main_window)
-        self.setCentralWidget(recalibrate_root)
+        widget = RecalibrateRoot(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_generate_calibration_gasific(self):
-        self.clear_central_widget()
-        gasific_widget = GenerarArchivoCalibracionGASIFIC(back_callback=self.create_main_window)
-        self.setCentralWidget(gasific_widget)
+        widget = GenerarArchivoCalibracionGASIFIC(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_noise_analysis(self):
-        self.clear_central_widget()
-        noise_analysis = NoiseAnalysis(back_callback=self.create_main_window)
-        self.setCentralWidget(noise_analysis)
+        widget = NoiseAnalysis(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
     def open_generate_report(self):
-        self.clear_central_widget()
-        reporte_window = ReporteFinCampagnaWindow(back_callback=self.create_main_window)
-        self.setCentralWidget(reporte_window)
+        widget = ReporteFinCampagnaWindow(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
 
-    def clear_central_widget(self):
-        current_widget = self.centralWidget()
-        if current_widget is not None:
-            current_widget.deleteLater()
-        self.setCentralWidget(QWidget())
+    def show_new_widget(self, widget):
+        self.content_widget.addWidget(widget)
+        self.content_widget.setCurrentWidget(widget)
+
+    def return_to_main_window(self):
+        self.content_widget.setCurrentWidget(self.main_window_widget)
 
 def main():
     import sys

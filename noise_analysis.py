@@ -1,6 +1,8 @@
+# noise_analysis.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
-    QTextEdit, QApplication, QMessageBox, QGroupBox, QSlider
+    QTextEdit, QApplication, QMessageBox, QGroupBox, QSlider, QCheckBox, QScrollArea
 )
 from PySide6.QtCore import Qt
 import pandas as pd
@@ -20,9 +22,14 @@ class NoiseAnalysis(QWidget):
         self.setWindowTitle("Análisis de Ruido Online")
         self.resize(1000, 800)
 
-        # Layout principal
-        self.main_layout = QVBoxLayout(self)
-        self.setLayout(self.main_layout)
+        # Layout principal con scroll
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        main_widget = QWidget()
+        scroll_area.setWidget(main_widget)
+        self.main_layout = QVBoxLayout(main_widget)
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(scroll_area)
 
         # Título
         title = QLabel("Análisis de Ruido Online")
@@ -183,6 +190,8 @@ class NoiseAnalysis(QWidget):
         accumulation_delta = time_deltas[accumulation_time]
 
         plt.figure(figsize=(10, 6))
+        data_plotted = False  # Variable para verificar si se graficaron datos
+
         for detector in selected_detectors:
             total_col = f"detector_{detector}_total_counts"
             neutron_col = f"detector_{detector}_neutron_counts"
@@ -190,9 +199,18 @@ class NoiseAnalysis(QWidget):
                 QMessageBox.critical(self, "Error", f"El archivo no contiene las columnas necesarias para el Detector {detector}.")
                 return
 
+            # Calcular la relación Entries / Neutron Region
             df[f'ratio_{detector}'] = df[total_col] / df[neutron_col]
 
-            df_resampled = df.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
+            # Calcular diferencias y filtrar valores iniciales
+            df['diff_time'] = df['timestamp'].diff().dt.total_seconds()
+            df_filtered = df[df['diff_time'] > 0]
+
+            if df_filtered.empty:
+                QMessageBox.warning(self, "Advertencia", f"No hay datos válidos para el Detector {detector} después del filtrado.")
+                continue
+
+            df_resampled = df_filtered.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
             df_resampled[f'ratio_{detector}'] = df_resampled[f'ratio_{detector}'].interpolate()
 
             average_ratio = df_resampled[f'ratio_{detector}'].mean()
@@ -201,16 +219,20 @@ class NoiseAnalysis(QWidget):
 
             plt.plot(df_resampled['timestamp'], df_resampled[f'ratio_{detector}'], label=f'Detector {detector}')
             plt.fill_between(df_resampled['timestamp'], lower_band, upper_band, color='gray', alpha=0.2)
+            data_plotted = True
 
-        plt.xlabel('Tiempo')
-        plt.ylabel('Relación de Ruido (Entries / Neutron Region)')
-        plt.legend()
-        plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time}")
-        plt.grid(True)
-        plt.tight_layout()
+        if data_plotted:
+            plt.xlabel('Tiempo')
+            plt.ylabel('Relación de Ruido (Entries / Neutron Region)')
+            plt.legend()
+            plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time}")
+            plt.grid(True)
+            plt.tight_layout()
 
-        # Mostrar la figura en una ventana nueva
-        self.show_plot()
+            # Mostrar la figura en una ventana nueva
+            self.show_plot()
+        else:
+            QMessageBox.warning(self, "Advertencia", "No hay datos para mostrar después del filtrado.")
 
     def show_plot(self):
         self.plot_window = QWidget()
@@ -255,6 +277,8 @@ class NoiseAnalysis(QWidget):
         accumulation_delta = time_deltas[accumulation_time]
 
         plt.figure(figsize=(10, 6))
+        data_plotted = False  # Variable para verificar si se graficaron datos
+
         for detector in selected_detectors:
             total_col = f"detector_{detector}_total_counts"
             neutron_col = f"detector_{detector}_neutron_counts"
@@ -262,9 +286,18 @@ class NoiseAnalysis(QWidget):
                 QMessageBox.critical(self, "Error", f"El archivo no contiene las columnas necesarias para el Detector {detector}.")
                 return
 
+            # Calcular la relación Entries / Neutron Region
             df[f'ratio_{detector}'] = df[total_col] / df[neutron_col]
 
-            df_resampled = df.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
+            # Calcular diferencias y filtrar valores iniciales
+            df['diff_time'] = df['timestamp'].diff().dt.total_seconds()
+            df_filtered = df[df['diff_time'] > 0]
+
+            if df_filtered.empty:
+                QMessageBox.warning(self, "Advertencia", f"No hay datos válidos para el Detector {detector} después del filtrado.")
+                continue
+
+            df_resampled = df_filtered.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
             df_resampled[f'ratio_{detector}'] = df_resampled[f'ratio_{detector}'].interpolate()
 
             average_ratio = df_resampled[f'ratio_{detector}'].mean()
@@ -273,24 +306,28 @@ class NoiseAnalysis(QWidget):
 
             plt.plot(df_resampled['timestamp'], df_resampled[f'ratio_{detector}'], label=f'Detector {detector}')
             plt.fill_between(df_resampled['timestamp'], lower_band, upper_band, color='gray', alpha=0.2)
+            data_plotted = True
 
-        plt.xlabel('Tiempo')
-        plt.ylabel('Relación de Ruido (Entries / Neutron Region)')
-        plt.legend()
-        plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time}")
-        plt.grid(True)
-        plt.tight_layout()
+        if data_plotted:
+            plt.xlabel('Tiempo')
+            plt.ylabel('Relación de Ruido (Entries / Neutron Region)')
+            plt.legend()
+            plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time}")
+            plt.grid(True)
+            plt.tight_layout()
 
-        directory = "./Graficos/Noise_analysis"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+            directory = "./Graficos/Noise_analysis"
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        detectors_str = "_".join([f"Detector{detector}" for detector in selected_detectors])
-        file_name = f"{directory}/{timestamp}_NoiseAnalysis_{self.selected_campaign.currentText()}_{detectors_str}.png"
-        plt.savefig(file_name)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            detectors_str = "_".join([f"Detector{detector}" for detector in selected_detectors])
+            file_name = f"{directory}/{timestamp}_NoiseAnalysis_{self.selected_campaign.currentText()}_{detectors_str}.png"
+            plt.savefig(file_name)
 
-        QMessageBox.information(self, "Éxito", f"Gráfico guardado como {file_name}")
+            QMessageBox.information(self, "Éxito", f"Gráfico guardado como {file_name}")
+        else:
+            QMessageBox.warning(self, "Advertencia", "No hay datos para guardar después del filtrado.")
 
     def analyze_all_detectors(self):
         campaign_file = f"./data/{self.selected_campaign.currentText()}-CountingRate.csv"
@@ -326,9 +363,18 @@ class NoiseAnalysis(QWidget):
                 QMessageBox.critical(self, "Error", f"El archivo no contiene las columnas necesarias para el Detector {detector}.")
                 return
 
+            # Calcular la relación Entries / Neutron Region
             df[f'ratio_{detector}'] = df[total_col] / df[neutron_col]
 
-            df_resampled = df.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
+            # Calcular diferencias y filtrar valores iniciales
+            df['diff_time'] = df['timestamp'].diff().dt.total_seconds()
+            df_filtered = df[df['diff_time'] > 0]
+
+            if df_filtered.empty:
+                report_lines.append(f"Detector {detector}: No hay datos válidos después del filtrado.")
+                continue
+
+            df_resampled = df_filtered.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
             df_resampled[f'ratio_{detector}'] = df_resampled[f'ratio_{detector}'].interpolate()
 
             average_ratio = df_resampled[f'ratio_{detector}'].mean()
@@ -342,7 +388,6 @@ class NoiseAnalysis(QWidget):
             report_lines.append(line)
 
         report = "\n".join(report_lines)
-
         self.report_text.setPlainText(report)
 
     def save_report(self):

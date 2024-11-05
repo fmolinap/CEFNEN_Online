@@ -1,3 +1,5 @@
+# plot_cr_evo.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
     QApplication, QMessageBox, QRadioButton, QCheckBox
@@ -48,8 +50,8 @@ class PlotCREvo(QWidget):
         data_type_layout = QHBoxLayout()
         data_type_label = QLabel("Seleccionar Datos a Graficar:")
         self.entries_radio = QRadioButton("Entries")
-        self.entries_radio.setChecked(True)
         self.neutron_radio = QRadioButton("Neutron Regions")
+        self.neutron_radio.setChecked(True)
         data_type_layout.addWidget(data_type_label)
         data_type_layout.addWidget(self.entries_radio)
         data_type_layout.addWidget(self.neutron_radio)
@@ -163,27 +165,37 @@ class PlotCREvo(QWidget):
                 QMessageBox.critical(self, "Error", f"El archivo no contiene la columna {col_name}.")
                 return
 
-            df['diff_counts'] = df[col_name].diff().fillna(0)
-            df['diff_time'] = df['timestamp'].diff().dt.total_seconds().fillna(1)
+            df['diff_counts'] = df[col_name].diff()
+            df['diff_time'] = df['timestamp'].diff().dt.total_seconds()
             df['rate'] = df['diff_counts'] / df['diff_time']
 
+            # Eliminar puntos con diff_time <= 0 o diff_counts <= 0
+            df_filtered = df[(df['diff_time'] > 0) & (df['diff_counts'] > 0)]
+
+            if df_filtered.empty:
+                QMessageBox.warning(self, "Advertencia", f"No hay datos válidos para el Detector {detector} después del filtrado.")
+                continue
+
             # Resamplear los datos en intervalos de acumulación y calcular la media
-            df_resampled = df.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
+            df_resampled = df_filtered.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
 
             # Interpolar valores faltantes
             df_resampled['rate'] = df_resampled['rate'].interpolate()
 
             plt.plot(df_resampled['timestamp'], df_resampled['rate'], label=f'Detector {detector}')
 
-        plt.xlabel('Tiempo')
-        plt.ylabel('Average Counting Rate s$^{-1}$')
-        plt.legend()
-        plt.title(f"Counting Rate ({data_type}) para la Campaña {self.selected_campaign_plot.currentText()} cada {accumulation_time}")
-        plt.grid(True)
-        plt.tight_layout()
+        if plt.gca().has_data():
+            plt.xlabel('Tiempo')
+            plt.ylabel('Average Counting Rate s$^{-1}$')
+            plt.legend()
+            plt.title(f"Counting Rate ({data_type}) para la Campaña {self.selected_campaign_plot.currentText()} cada {accumulation_time}")
+            plt.grid(True)
+            plt.tight_layout()
 
-        # Mostrar el gráfico en una ventana nueva
-        self.show_plot()
+            # Mostrar el gráfico en una ventana nueva
+            self.show_plot()
+        else:
+            QMessageBox.warning(self, "Advertencia", "No hay datos para mostrar después del filtrado.")
 
     def show_plot(self):
         self.plot_window = QWidget()
@@ -228,50 +240,62 @@ class PlotCREvo(QWidget):
         accumulation_delta = time_deltas[accumulation_time]
 
         plt.figure(figsize=(10, 6))
+        data_plotted = False  # Variable para verificar si se graficaron datos
+
         for detector in selected_detectors:
             col_name = f"detector_{detector}_neutron_counts" if data_type == "Neutron Regions" else f"detector_{detector}_total_counts"
             if col_name not in df.columns:
                 QMessageBox.critical(self, "Error", f"El archivo no contiene la columna {col_name}.")
                 return
 
-            df['diff_counts'] = df[col_name].diff().fillna(0)
-            df['diff_time'] = df['timestamp'].diff().dt.total_seconds().fillna(1)
+            df['diff_counts'] = df[col_name].diff()
+            df['diff_time'] = df['timestamp'].diff().dt.total_seconds()
             df['rate'] = df['diff_counts'] / df['diff_time']
 
+            # Eliminar puntos con diff_time <= 0 o diff_counts <= 0
+            df_filtered = df[(df['diff_time'] > 0) & (df['diff_counts'] > 0)]
+
+            if df_filtered.empty:
+                QMessageBox.warning(self, "Advertencia", f"No hay datos válidos para el Detector {detector} después del filtrado.")
+                continue
+
             # Resamplear los datos en intervalos de acumulación y calcular la media
-            df_resampled = df.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
+            df_resampled = df_filtered.set_index('timestamp').resample(accumulation_delta).mean(numeric_only=True).reset_index()
 
             # Interpolar valores faltantes
             df_resampled['rate'] = df_resampled['rate'].interpolate()
 
             plt.plot(df_resampled['timestamp'], df_resampled['rate'], label=f'Detector {detector}')
+            data_plotted = True
 
-        plt.xlabel('Tiempo')
-        plt.ylabel('Average Counting Rate s$^{-1}$')
-        plt.legend()
-        plt.title(f"Counting Rate ({data_type}) para la Campaña {self.selected_campaign_plot.currentText()} cada {accumulation_time}")
-        plt.grid(True)
-        plt.tight_layout()
+        if data_plotted:
+            plt.xlabel('Tiempo')
+            plt.ylabel('Average Counting Rate s$^{-1}$')
+            plt.legend()
+            plt.title(f"Counting Rate ({data_type}) para la Campaña {self.selected_campaign_plot.currentText()} cada {accumulation_time}")
+            plt.grid(True)
+            plt.tight_layout()
 
-        # Crear carpeta si no existe
-        directory = f"./Graficos/{self.selected_campaign_plot.currentText()}"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+            # Crear carpeta si no existe
+            directory = f"./Graficos/{self.selected_campaign_plot.currentText()}"
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
-        # Guardar el gráfico
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        detectors_str = "_".join([f"Detector{detector}" for detector in selected_detectors])
-        file_name = f"{directory}/{timestamp}_CountingRate_{self.selected_campaign_plot.currentText()}_{accumulation_time}_{detectors_str}.png"
-        plt.savefig(file_name)
+            # Guardar el gráfico
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            detectors_str = "_".join([f"Detector{detector}" for detector in selected_detectors])
+            file_name = f"{directory}/{timestamp}_CountingRate_{self.selected_campaign_plot.currentText()}_{accumulation_time}_{detectors_str}.png"
+            plt.savefig(file_name)
 
-        QMessageBox.information(self, "Éxito", f"Gráfico guardado como {file_name}")
+            QMessageBox.information(self, "Éxito", f"Gráfico guardado como {file_name}")
+        else:
+            QMessageBox.warning(self, "Advertencia", "No hay datos para guardar el gráfico después del filtrado.")
 
     def back(self):
         if callable(self.back_callback):
             self.back_callback()
         else:
             self.close()
-
 
 if __name__ == "__main__":
     import sys
