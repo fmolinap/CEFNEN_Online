@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 from PIL import Image, ImageQt
+
+# Importar los módulos de las diferentes ventanas
 from crear_nueva_campagna import CrearNuevaCampagna
 from agregar_datos import AgregarDatos
 from calibrate import Calibrate
@@ -25,6 +27,7 @@ from lookuptable_setup import LookUpTableSetup
 from incident_report import IncidentReport
 from reporte_fin_de_campagna import ReporteFinCampagnaWindow
 from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC
+from plot_root_histograms import PlotRootHistograms  # Importar el nuevo módulo
 
 # Importar funciones y clases adicionales
 from monitoreo_archivos_remotos import MonitoringThread, MonitoringDialog
@@ -82,7 +85,6 @@ class MainApp(QMainWindow):
         # Subtítulo
         subtitle_label = QLabel(
             "Programa de análisis online de las campañas experimentales de CEFNEN. fmolinap2024"
-           
         )
         subtitle_label.setWordWrap(True)
         subtitle_label.setAlignment(Qt.AlignCenter)
@@ -182,6 +184,12 @@ class MainApp(QMainWindow):
         btn_plot_comparison.clicked.connect(self.open_plot_comparison)
         btn_plot_comparison.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_plot_comparison)
+
+        # Nuevo botón para graficar histogramas ROOT
+        btn_plot_root_histograms = QPushButton("Plot ROOT Histograms")
+        btn_plot_root_histograms.clicked.connect(self.open_plot_root_histograms)
+        btn_plot_root_histograms.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_plot_root_histograms)
 
         layout.addStretch()
 
@@ -369,6 +377,10 @@ class MainApp(QMainWindow):
 
     def open_plot_comparison(self):
         widget = PlotComparison(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
+
+    def open_plot_root_histograms(self):
+        widget = PlotRootHistograms(back_callback=self.return_to_main_window)
         self.show_new_widget(widget)
 
     def open_calibrate(self):
