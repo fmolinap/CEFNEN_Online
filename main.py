@@ -27,7 +27,8 @@ from lookuptable_setup import LookUpTableSetup
 from incident_report import IncidentReport
 from reporte_fin_de_campagna import ReporteFinCampagnaWindow
 from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC
-from plot_root_histograms import PlotRootHistograms  # Importar el nuevo módulo
+from plot_root_histograms import PlotRootHistograms
+from analisis_estadistico_descriptivo import AnalisisEstadisticoDescriptivo  # Importar el nuevo módulo
 
 # Importar funciones y clases adicionales
 from monitoreo_archivos_remotos import MonitoringThread, MonitoringDialog
@@ -222,6 +223,11 @@ class MainApp(QMainWindow):
         btn_noise_analysis.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_noise_analysis)
 
+        btn_statistical_analysis = QPushButton("Análisis Estadístico Descriptivo")
+        btn_statistical_analysis.clicked.connect(self.open_statistical_analysis)
+        btn_statistical_analysis.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_statistical_analysis)
+
         layout.addStretch()
 
     def create_file_management_buttons(self, layout):
@@ -401,6 +407,10 @@ class MainApp(QMainWindow):
 
     def open_noise_analysis(self):
         widget = NoiseAnalysis(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
+
+    def open_statistical_analysis(self):
+        widget = AnalisisEstadisticoDescriptivo(back_callback=self.return_to_main_window)
         self.show_new_widget(widget)
 
     def open_generate_report(self):

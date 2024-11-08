@@ -1,0 +1,11 @@
+Detector 1 no tiene outliers.
+
+
+Detector 2 no tiene outliers.
+
+
+Detector 3 no tiene outliers.
+
+
+Detector 4 no tiene outliers.
+

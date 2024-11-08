@@ -1,0 +1,35 @@
+Análisis Estadístico Descriptivo de la Campaña Test4det
+Tiempo total de experimento: 7 days 07:40:28
+
+
+Detector 1:
+  Promedio del counting rate: 0.2535 cps
+  Desviación estándar: 0.0062 cps
+  Mediana: 0.2516 cps
+  Percentil 25: 0.2491 cps
+  Percentil 75: 0.2559 cps
+
+
+Detector 2:
+  Promedio del counting rate: 0.2453 cps
+  Desviación estándar: 0.0085 cps
+  Mediana: 0.2425 cps
+  Percentil 25: 0.2391 cps
+  Percentil 75: 0.2487 cps
+
+
+Detector 3:
+  Promedio del counting rate: 0.0241 cps
+  Desviación estándar: 0.0004 cps
+  Mediana: 0.0240 cps
+  Percentil 25: 0.0237 cps
+  Percentil 75: 0.0244 cps
+
+
+Detector 4:
+  Promedio del counting rate: 0.2057 cps
+  Desviación estándar: 0.0086 cps
+  Mediana: 0.2031 cps
+  Percentil 25: 0.1984 cps
+  Percentil 75: 0.2104 cps
+

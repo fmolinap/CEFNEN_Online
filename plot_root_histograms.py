@@ -44,6 +44,7 @@ class PlotRootHistograms(QWidget):
         self.campaigns = get_existing_campaigns()
         if self.campaigns:
             self.selected_campaign.addItems(self.campaigns)
+            self.selected_campaign.setCurrentIndex(len(self.campaigns) - 1)
         else:
             self.selected_campaign.addItem("No hay campañas disponibles")
         campaign_layout.addWidget(campaign_label)
@@ -72,35 +73,11 @@ class PlotRootHistograms(QWidget):
         load_button = QPushButton("Cargar y Mostrar Histogramas")
         load_button.clicked.connect(self.load_and_show_histograms)
         back_button = QPushButton("Regresar")
+        back_button.setStyleSheet("background-color: #f44336; color: white;")
         back_button.clicked.connect(self.back)
         buttons_layout.addWidget(load_button)
         buttons_layout.addWidget(back_button)
         self.main_layout.addLayout(buttons_layout)
-
-        # Controles de Zoom
-        zoom_layout = QHBoxLayout()
-        zoom_label = QLabel("Zoom:")
-        self.zoom_lower = QLineEdit()
-        self.zoom_upper = QLineEdit()
-        apply_zoom_button = QPushButton("Aplicar Zoom")
-        apply_zoom_button.clicked.connect(self.apply_zoom)
-        zoom_layout.addWidget(zoom_label)
-        zoom_layout.addWidget(QLabel("Límite Inferior"))
-        zoom_layout.addWidget(self.zoom_lower)
-        zoom_layout.addWidget(QLabel("Límite Superior"))
-        zoom_layout.addWidget(self.zoom_upper)
-        zoom_layout.addWidget(apply_zoom_button)
-        self.main_layout.addLayout(zoom_layout)
-
-        # Botón para guardar el canvas
-        save_button = QPushButton("Guardar Canvas")
-        save_button.clicked.connect(self.save_canvas)
-        self.main_layout.addWidget(save_button)
-
-        # Área de scroll para el canvas
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.main_layout.addWidget(self.scroll_area)
 
         # Estilos
         self.setStyleSheet("""
@@ -308,16 +285,17 @@ class PlotRootHistograms(QWidget):
         self.create_canvas()
 
     def create_canvas(self):
-        # Limpiar cualquier canvas previo
-        if self.canvas:
-            self.canvas.setParent(None)
-            self.canvas = None
-
         num_histograms = len(self.histograms_to_plot)
         grid_size = int(np.ceil(np.sqrt(num_histograms)))
 
-        self.fig, self.ax_arr = plt.subplots(grid_size, grid_size, figsize=(12, 8))
-        self.fig.tight_layout(pad=3.0)
+        # Crear una nueva ventana para el canvas
+        self.canvas_window = QDialog(self)
+        self.canvas_window.setWindowTitle("Visualización de Histogramas")
+        self.canvas_window.showFullScreen()  # Mostrar en pantalla completa
+
+        # Crear figura y ejes con mayor espacio entre subplots
+        self.fig, self.ax_arr = plt.subplots(grid_size, grid_size, figsize=(16, 9))
+        plt.subplots_adjust(wspace=0.4, hspace=0.6)  # Aumentar espacio entre subplots
 
         # Aplanar el arreglo de ejes para facilitar el acceso
         if num_histograms == 1:
@@ -337,9 +315,9 @@ class PlotRootHistograms(QWidget):
                 x.append(hist.GetBinCenter(bin_num))
                 y.append(hist.GetBinContent(bin_num))
             self.ax_arr[idx].plot(x, y)
-            self.ax_arr[idx].set_title(f"Detector {detector_num}")
-            self.ax_arr[idx].set_xlabel("Canal")
-            self.ax_arr[idx].set_ylabel("Cuentas")
+            self.ax_arr[idx].set_title(f"Detector {detector_num}", fontsize=14)
+            self.ax_arr[idx].set_xlabel("Canal", fontsize=12)
+            self.ax_arr[idx].set_ylabel("Cuentas", fontsize=12)
 
         # Ocultar subplots no utilizados
         for idx in range(len(self.histograms_to_plot), len(self.ax_arr)):
@@ -347,20 +325,56 @@ class PlotRootHistograms(QWidget):
 
         # Crear el widget del canvas
         self.canvas = FigureCanvas(self.fig)
-        self.scroll_area.setWidget(self.canvas)
+        canvas_layout = QVBoxLayout()
+        canvas_layout.addWidget(self.canvas)
+
+        # Controles adicionales en el canvas_window
+        controls_layout = QHBoxLayout()
+
+        # Controles de Zoom
+        zoom_layout = QHBoxLayout()
+        zoom_label = QLabel("Zoom:")
+        self.zoom_lower_in_canvas = QLineEdit()
+        self.zoom_upper_in_canvas = QLineEdit()
+        apply_zoom_button_in_canvas = QPushButton("Aplicar Zoom")
+        apply_zoom_button_in_canvas.clicked.connect(self.apply_zoom_in_canvas)
+        zoom_layout.addWidget(zoom_label)
+        zoom_layout.addWidget(QLabel("Límite Inferior"))
+        zoom_layout.addWidget(self.zoom_lower_in_canvas)
+        zoom_layout.addWidget(QLabel("Límite Superior"))
+        zoom_layout.addWidget(self.zoom_upper_in_canvas)
+        zoom_layout.addWidget(apply_zoom_button_in_canvas)
+
+        controls_layout.addLayout(zoom_layout)
+
+        # Botón para guardar el canvas
+        save_canvas_button_in_canvas = QPushButton("Guardar Canvas")
+        save_canvas_button_in_canvas.clicked.connect(self.save_canvas_from_canvas_window)
+        controls_layout.addWidget(save_canvas_button_in_canvas)
+
+        # Botón para cerrar la ventana
+        close_button = QPushButton("Cerrar")
+        close_button.setFixedSize(100, 40)
+        close_button.clicked.connect(self.canvas_window.close)
+        controls_layout.addWidget(close_button)
+
+        # Añadir los controles al layout del canvas
+        canvas_layout.addLayout(controls_layout)
+
+        self.canvas_window.setLayout(canvas_layout)
         self.zoom_applied = False
 
-    def apply_zoom(self):
-        if not self.histograms_to_plot:
-            QMessageBox.critical(self, "Error", "No hay histogramas cargados.")
+    def apply_zoom_in_canvas(self):
+        if not hasattr(self, 'canvas_window') or not self.canvas_window.isVisible():
+            QMessageBox.critical(self.canvas_window, "Error", "No hay histogramas cargados o la ventana de canvas está cerrada.")
             return
         try:
-            lower = float(self.zoom_lower.text())
-            upper = float(self.zoom_upper.text())
+            lower = float(self.zoom_lower_in_canvas.text())
+            upper = float(self.zoom_upper_in_canvas.text())
             if lower >= upper:
                 raise ValueError("El límite inferior debe ser menor que el superior.")
         except ValueError as ve:
-            QMessageBox.critical(self, "Error", f"Valores de zoom inválidos: {ve}")
+            QMessageBox.critical(self.canvas_window, "Error", f"Valores de zoom inválidos: {ve}")
             return
 
         for ax in self.ax_arr[:len(self.histograms_to_plot)]:
@@ -368,18 +382,25 @@ class PlotRootHistograms(QWidget):
         self.canvas.draw()
         self.zoom_applied = True
 
-    def save_canvas(self):
-        if not self.canvas:
-            QMessageBox.critical(self, "Error", "No hay canvas para guardar.")
+    def save_canvas_from_canvas_window(self):
+        if not hasattr(self, 'canvas'):
+            QMessageBox.critical(self.canvas_window, "Error", "No hay canvas para guardar.")
             return
         directory = f"./Graficos/Canvas/{self.short_name}"
         os.makedirs(directory, exist_ok=True)
         timestamp = datetime.now().strftime("%y%m%d_%H%M")
-        zoom_text = f"_Zoom_{self.zoom_lower.text()}_{self.zoom_upper.text()}" if self.zoom_applied else ""
-        file_name = f"{timestamp}_Canvas_{self.hist_type}{zoom_text}.png"
+        zoom_text = ""
+        if self.zoom_applied:
+            try:
+                lower = float(self.zoom_lower_in_canvas.text())
+                upper = float(self.zoom_upper_in_canvas.text())
+                zoom_text = f"_Zoom_{lower}_{upper}"
+            except ValueError:
+                zoom_text = "_Zoom"
+        file_name = f"{timestamp}_Canvas_{self.hist_type}.png"
         full_path = os.path.join(directory, file_name)
         self.fig.savefig(full_path)
-        QMessageBox.information(self, "Éxito", f"Canvas guardado como {full_path}")
+        QMessageBox.information(self.canvas_window, "Éxito", f"Canvas guardado como {full_path}")
 
     def back(self):
         if callable(self.back_callback):

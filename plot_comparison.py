@@ -130,6 +130,7 @@ class PlotComparison(QWidget):
         save_compare_button = QPushButton("Guardar Selección")
         save_compare_button.clicked.connect(self.save_compare_plot)
         back_button = QPushButton("Regresar")
+        back_button.setStyleSheet("background-color: #f44336; color: white;")
         back_button.clicked.connect(self.back)
 
         buttons_layout.addWidget(compare_plot_button)

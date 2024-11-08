@@ -47,6 +47,7 @@ class IncidentReport(QWidget):
         self.selected_campaign = QComboBox()
         self.campaigns = self.get_existing_campaigns()
         self.selected_campaign.addItems(self.campaigns)
+        self.selected_campaign.setCurrentIndex(len(self.campaigns) - 1)
         campaign_layout.addWidget(campaign_label)
         campaign_layout.addWidget(self.selected_campaign)
         form_layout.addLayout(campaign_layout)
@@ -155,7 +156,7 @@ class IncidentReport(QWidget):
     def add_graph(self):
         graph_type, ok = QInputDialog.getItem(
             self, "Seleccionar Tipo de Gráfico", "Tipo de Gráfico:",
-            ["Plot Counting Rate", "Plot Comparison", "Análisis de Ruido", "Nueva LookUpTable"], 0, False
+            ["Plot Counting Rate", "Counting Rates Distribution","Boxplot Neutron CR","ROOT Canvas", "Plot Comparison", "Análisis de Ruido", "Nueva LookUpTable"], 0, False
         )
         if not ok:
             return
@@ -165,6 +166,12 @@ class IncidentReport(QWidget):
             directory = f"./Graficos/{campaign}"
         elif graph_type == "Plot Comparison":
             directory = f"./Graficos/Comparison/{campaign}"
+        elif graph_type == "Counting Rates Distribution":
+            directory = f"./Graficos/AnalisisEstadisticoDescriptivo/{campaign}/Histogramas"
+        elif graph_type == "ROOT Canvas":
+            directory = f"./Graficos/Canvas/{campaign}"
+        elif graph_type == "Boxplot Neutron CR":
+            directory = f"./Graficos/AnalisisEstadisticoDescriptivo/{campaign}/Boxplots"
         elif graph_type == "Nueva LookUpTable":
             directory = f"./Graficos/Lookuptable/{campaign}"
         else:

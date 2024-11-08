@@ -44,6 +44,7 @@ class Calibrate(QWidget):
         self.campaigns = get_existing_campaigns()
         self.campaign_combo = QComboBox()
         self.campaign_combo.addItems(self.campaigns)
+        self.campaign_combo.setCurrentIndex(len(self.campaigns) - 1)
         if self.campaigns:
             self.selected_campaign = self.campaigns[0]
         campaigns_layout.addWidget(self.campaign_combo)

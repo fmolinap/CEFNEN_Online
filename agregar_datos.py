@@ -105,6 +105,14 @@ class AgregarDatos(QWidget):
 
         root_form_layout.addWidget(QLabel("Seleccionar Campaña:", self), 0, 0)
         self.campaign_combo_root = QComboBox(self)
+        campaigns = get_existing_campaigns()
+        if campaigns:
+            campaigns.reverse()
+            self.campaign_combo_root.addItems(campaigns)
+            self.campaign_combo_root.setCurrentIndex(0)
+        else:
+            self.campaign_como_root.addItem("No hay campañas disponibles")
+
         root_form_layout.addWidget(self.campaign_combo_root, 0, 1)
 
         accept_campaign_button = QPushButton("Aceptar Campaña", self)

@@ -39,6 +39,7 @@ class PlotCREvo(QWidget):
         self.campaigns = get_existing_campaigns()
         if self.campaigns:
             self.selected_campaign_plot.addItems(self.campaigns)
+            self.selected_campaign_plot.setCurrentIndex(len(self.campaigns) - 1)
         else:
             self.selected_campaign_plot.addItem("No hay campañas disponibles")
         self.selected_campaign_plot.currentTextChanged.connect(self.update_detectors)
@@ -88,6 +89,7 @@ class PlotCREvo(QWidget):
 
         # Botón de regresar
         back_button = QPushButton("Regresar")
+        back_button.setStyleSheet("background-color: #f44336; color: white;")
         back_button.clicked.connect(self.back)
         self.main_layout.addWidget(back_button)
 

@@ -44,6 +44,7 @@ class NoiseAnalysis(QWidget):
         self.campaigns = get_existing_campaigns()
         if self.campaigns:
             self.selected_campaign.addItems(self.campaigns)
+            self.selected_campaign.setCurrentIndex(len(self.campaigns) - 1)
         else:
             self.selected_campaign.addItem("No hay campañas disponibles")
         self.selected_campaign.currentTextChanged.connect(self.update_detectors)
@@ -107,6 +108,8 @@ class NoiseAnalysis(QWidget):
         # Botones de navegación
         nav_buttons_layout = QHBoxLayout()
         back_button = QPushButton("Regresar")
+        back_button.setStyleSheet("background-color: #f44336; color: white;")
+        
         back_button.clicked.connect(self.back)
         nav_buttons_layout.addWidget(back_button)
 

@@ -55,6 +55,7 @@ class CalibrationRoot(QWidget):
         self.campaigns = get_existing_campaigns()
         if self.campaigns:
             self.selected_campaign.addItems(self.campaigns)
+            self.selected_campaign.setCurrentIndex(len(self.campaigns) - 1)
         else:
             self.selected_campaign.addItem("No hay campañas disponibles")
         campaign_layout.addWidget(campaign_label)

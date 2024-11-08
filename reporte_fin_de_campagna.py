@@ -49,6 +49,7 @@ class ReporteFinCampagnaWindow(QWidget):
         self.campaigns = utils.get_existing_campaigns()
         if self.campaigns:
             self.campaign_combo.addItems(self.campaigns)
+            self.campaign_combo.setCurrentIndex(len(self.campaigns) - 1)
         else:
             self.campaign_combo.addItem("No hay campañas disponibles")
         campaign_layout.addWidget(campaign_label)

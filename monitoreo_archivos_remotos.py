@@ -86,6 +86,7 @@ class MonitoringDialog(QDialog):
         self.combo_campaign = QComboBox()
         campaigns = get_existing_campaigns()
         self.combo_campaign.addItems(campaigns)
+        self.combo_campaign.setCurrentIndex(len(campaigns) - 1)
         layout.addWidget(label_campaign)
         layout.addWidget(self.combo_campaign)
 
