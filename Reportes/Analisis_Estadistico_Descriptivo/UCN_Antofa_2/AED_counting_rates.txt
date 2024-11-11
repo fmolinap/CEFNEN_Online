@@ -1,0 +1,131 @@
+Análisis Estadístico Descriptivo de la Campaña UCN_Antofa_2
+Tiempo total de experimento: 3 days 17:13:01
+
+
+Detector 1:
+  Promedio del counting rate: 0.1205 cps
+  Desviación estándar: 0.0095 cps
+  Mediana: 0.1213 cps
+  Percentil 25: 0.1147 cps
+  Percentil 75: 0.1257 cps
+
+
+Detector 2:
+  Promedio del counting rate: 0.1159 cps
+  Desviación estándar: 0.0078 cps
+  Mediana: 0.1157 cps
+  Percentil 25: 0.1112 cps
+  Percentil 75: 0.1204 cps
+
+
+Detector 3:
+  Promedio del counting rate: 0.0490 cps
+  Desviación estándar: 0.0048 cps
+  Mediana: 0.0491 cps
+  Percentil 25: 0.0459 cps
+  Percentil 75: 0.0525 cps
+
+
+Detector 4:
+  Promedio del counting rate: 0.0429 cps
+  Desviación estándar: 0.0048 cps
+  Mediana: 0.0430 cps
+  Percentil 25: 0.0401 cps
+  Percentil 75: 0.0459 cps
+
+
+Detector 5:
+  Promedio del counting rate: 0.0140 cps
+  Desviación estándar: 0.0028 cps
+  Mediana: 0.0140 cps
+  Percentil 25: 0.0120 cps
+  Percentil 75: 0.0160 cps
+
+
+Detector 6:
+  Promedio del counting rate: 0.0785 cps
+  Desviación estándar: 0.0064 cps
+  Mediana: 0.0779 cps
+  Percentil 25: 0.0742 cps
+  Percentil 75: 0.0826 cps
+
+
+Detector 7:
+  Promedio del counting rate: 0.0630 cps
+  Desviación estándar: 0.0054 cps
+  Mediana: 0.0633 cps
+  Percentil 25: 0.0595 cps
+  Percentil 75: 0.0667 cps
+
+
+Detector 8:
+  Promedio del counting rate: 0.0614 cps
+  Desviación estándar: 0.0057 cps
+  Mediana: 0.0610 cps
+  Percentil 25: 0.0584 cps
+  Percentil 75: 0.0652 cps
+
+
+Detector 9:
+  Promedio del counting rate: 0.0087 cps
+  Desviación estándar: 0.0024 cps
+  Mediana: 0.0088 cps
+  Percentil 25: 0.0070 cps
+  Percentil 75: 0.0101 cps
+
+
+Detector 10:
+  Promedio del counting rate: 0.1030 cps
+  Desviación estándar: 0.0067 cps
+  Mediana: 0.1028 cps
+  Percentil 25: 0.0995 cps
+  Percentil 75: 0.1072 cps
+
+
+Detector 11:
+  Promedio del counting rate: 0.0773 cps
+  Desviación estándar: 0.0061 cps
+  Mediana: 0.0768 cps
+  Percentil 25: 0.0732 cps
+  Percentil 75: 0.0814 cps
+
+
+Detector 12:
+  Promedio del counting rate: 0.0141 cps
+  Desviación estándar: 0.0031 cps
+  Mediana: 0.0143 cps
+  Percentil 25: 0.0117 cps
+  Percentil 75: 0.0165 cps
+
+
+Detector 13:
+  Promedio del counting rate: 0.0164 cps
+  Desviación estándar: 0.0027 cps
+  Mediana: 0.0162 cps
+  Percentil 25: 0.0144 cps
+  Percentil 75: 0.0183 cps
+
+
+Detector 14:
+  Promedio del counting rate: 0.0533 cps
+  Desviación estándar: 0.0054 cps
+  Mediana: 0.0534 cps
+  Percentil 25: 0.0491 cps
+  Percentil 75: 0.0570 cps
+
+
+Detector 15:
+  Promedio del counting rate: 0.0504 cps
+  Desviación estándar: 0.0160 cps
+  Mediana: 0.0491 cps
+  Percentil 25: 0.0453 cps
+  Percentil 75: 0.0534 cps
+
+
+Detector 16:
+  Promedio del counting rate: 0.0354 cps
+  Desviación estándar: 0.0043 cps
+  Mediana: 0.0350 cps
+  Percentil 25: 0.0327 cps
+  Percentil 75: 0.0382 cps
+

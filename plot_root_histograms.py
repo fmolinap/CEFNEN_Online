@@ -2,7 +2,7 @@
 
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
-    QFileDialog, QMessageBox, QLineEdit, QScrollArea, QGridLayout, QDialog
+    QFileDialog, QMessageBox, QLineEdit, QScrollArea, QGridLayout, QDialog, QCheckBox
 )
 from PySide6.QtCore import Qt
 import os
@@ -31,7 +31,7 @@ class PlotRootHistograms(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Plot Histograms from ROOT File")
+        self.setWindowTitle("Visualización de Histogramas desde Archivo ROOT")
         self.resize(1000, 800)
 
         self.main_layout = QVBoxLayout(self)
@@ -51,6 +51,10 @@ class PlotRootHistograms(QWidget):
         campaign_layout.addWidget(self.selected_campaign)
         self.main_layout.addLayout(campaign_layout)
 
+        # Checkbox para activar mapeo de histograma ChXX
+        self.chxx_checkbox = QCheckBox("Medida en campaña (Histogramas llamados ChXX)")
+        self.main_layout.addWidget(self.chxx_checkbox)
+
         # Botón para aceptar la campaña y cargar el mapeo
         accept_campaign_button = QPushButton("Aceptar Campaña")
         accept_campaign_button.clicked.connect(self.accept_campaign)
@@ -62,7 +66,7 @@ class PlotRootHistograms(QWidget):
 
         # Selección de tipo de histograma (se actualizará después de cargar el archivo ROOT)
         hist_layout = QHBoxLayout()
-        hist_label = QLabel("Seleccionar Tipo de Histograma:")
+        hist_label = QLabel("Seleccionar Sufijo (YY):")
         self.hist_type_combo = QComboBox()
         hist_layout.addWidget(hist_label)
         hist_layout.addWidget(self.hist_type_combo)
@@ -132,12 +136,22 @@ class PlotRootHistograms(QWidget):
                 obj = key.ReadObj()
                 if isinstance(obj, ROOT.TH1):
                     # Dividir el nombre del histograma en base_name y suffix
-                    if '_' in hist_name:
-                        base_name = '_'.join(hist_name.split('_')[:-1])
-                        suffix = hist_name.split('_')[-1]
+                    if self.chxx_checkbox.isChecked():
+                        # Histograma nombrado como ChXX_YY
+                        if '_' in hist_name:
+                            base_name = hist_name.split('_')[0]
+                            suffix = '_'.join(hist_name.split('_')[1:])
+                        else:
+                            base_name = hist_name
+                            suffix = ''
                     else:
-                        base_name = hist_name
-                        suffix = ''
+                        # Histograma con formato estándar
+                        if '_' in hist_name:
+                            base_name = '_'.join(hist_name.split('_')[:-1])
+                            suffix = hist_name.split('_')[-1]
+                        else:
+                            base_name = hist_name
+                            suffix = ''
                     # Guardar el histograma en un diccionario con clave (base_name, suffix)
                     self.histograms[(base_name, suffix)] = obj
                     # Añadir el base_name y suffix a los conjuntos
@@ -147,7 +161,7 @@ class PlotRootHistograms(QWidget):
             QMessageBox.critical(self, "Error", "No se encontraron histogramas en el archivo ROOT.")
             return
 
-        # Actualizar la lista de tipos de histograma (sufijos)
+        # Actualizar la lista de sufijos
         self.hist_type_combo.clear()
         sorted_suffixes = sorted(self.suffixes)
         self.hist_type_combo.addItems(sorted_suffixes)
@@ -163,22 +177,28 @@ class PlotRootHistograms(QWidget):
         mapping_layout = QGridLayout()
         num_detectors = get_num_detectors(self.selected_campaign_name)
 
-        # Botón para cargar mapeo existente
-        load_mapping_button = QPushButton("Cargar Mapeo")
-        load_mapping_button.clicked.connect(self.load_mapping)
-        layout.addWidget(load_mapping_button)
-
+        # Base names disponibles
         base_name_list = sorted(self.base_names)
+
         for i in range(num_detectors):
             detector_label = QLabel(f"Detector {i + 1}")
             base_name_combo = QComboBox()
             base_name_combo.addItems(base_name_list)
+            # Autoselección basada en ChXX
+            if self.chxx_checkbox.isChecked():
+                detector_number = i + 1
+                if detector_number < 10:
+                    expected_base = f"Ch0{detector_number}"
+                else:
+                    expected_base = f"Ch{detector_number}"
+                if expected_base in base_name_list:
+                    base_name_combo.setCurrentText(expected_base)
             mapping_layout.addWidget(detector_label, i, 0)
             mapping_layout.addWidget(base_name_combo, i, 1)
             self.detector_map[i] = base_name_combo
 
         # Cargar mapeo si existe
-        mapping_file = f"./mapeo_calibrados/{self.selected_campaign_name}/Mapeo_histogramas_{self.selected_campaign_name}_calibrados.csv"
+        mapping_file = f"./mapeo_calibrados/{self.selected_campaign_name}/Mapeo_histogramas_{self.selected_campaign_name}_plot_histograms_root.csv"
         if os.path.exists(mapping_file):
             self.load_mapping_from_file(mapping_file)
 
@@ -186,6 +206,10 @@ class PlotRootHistograms(QWidget):
 
         # Botones
         buttons_layout = QHBoxLayout()
+        load_mapping_button = QPushButton("Cargar Mapeo")
+        load_mapping_button.clicked.connect(self.load_mapping)
+        buttons_layout.addWidget(load_mapping_button)
+
         save_mapping_button = QPushButton("Guardar Mapeo")
         save_mapping_button.clicked.connect(self.save_mapping)
         buttons_layout.addWidget(save_mapping_button)
@@ -205,7 +229,12 @@ class PlotRootHistograms(QWidget):
             self.detector_histogram_map[i] = base_name
 
     def load_mapping(self):
-        mapping_file, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo de mapeo", f"./mapeo_calibrados/{self.selected_campaign_name}", "CSV Files (*.csv)")
+        mapping_file, _ = QFileDialog.getOpenFileName(
+            self,
+            "Seleccionar archivo de mapeo",
+            f"./mapeo_calibrados/{self.selected_campaign_name}",
+            "CSV Files (*.csv)"
+        )
         if mapping_file:
             self.load_mapping_from_file(mapping_file)
 
@@ -213,11 +242,15 @@ class PlotRootHistograms(QWidget):
         df_mapping = pd.read_csv(mapping_file)
         num_detectors = get_num_detectors(self.selected_campaign_name)
         for i in range(num_detectors):
-            base_name = df_mapping.loc[df_mapping['Detector'] == f'Detector_{i+1}', 'Histograma'].values[0]
-            if base_name in self.base_names:
-                self.detector_map[i].setCurrentText(base_name)
+            detector_key = f'Detector_{i+1}'
+            if detector_key in df_mapping['Detector'].values:
+                base_name = df_mapping.loc[df_mapping['Detector'] == detector_key, 'Histograma'].values[0]
+                if base_name in self.base_names:
+                    self.detector_map[i].setCurrentText(base_name)
+                else:
+                    QMessageBox.warning(self, "Advertencia", f"El histograma base '{base_name}' no se encontró en el archivo ROOT.")
             else:
-                QMessageBox.warning(self, "Advertencia", f"El histograma base '{base_name}' no se encontró en el archivo ROOT.")
+                QMessageBox.warning(self, "Advertencia", f"No se encontró el mapeo para el {detector_key} en el archivo de mapeo.")
 
     def save_mapping(self):
         # Guardar el mapeo en un archivo CSV
@@ -232,7 +265,12 @@ class PlotRootHistograms(QWidget):
         df_mapping = pd.DataFrame(mapping_data)
         save_dir = f"./mapeo_calibrados/{self.selected_campaign_name}"
         os.makedirs(save_dir, exist_ok=True)
-        mapping_file = f"{save_dir}/Mapeo_histogramas_{self.selected_campaign_name}_calibrados.csv"
+        # Crear un archivo de mapeo especial para plot_histograms_root
+        mapping_file = f"{save_dir}/Mapeo_histogramas_{self.selected_campaign_name}_plot_histograms_root.csv"
+        # Verificar si el archivo ya existe
+        if os.path.exists(mapping_file):
+            QMessageBox.information(self, "Información", f"El archivo {mapping_file} ya existe y no será sobreescrito.")
+            return
         df_mapping.to_csv(mapping_file, index=False)
         QMessageBox.information(self, "Éxito", f"Mapeo guardado en {mapping_file}")
 
@@ -265,7 +303,7 @@ class PlotRootHistograms(QWidget):
             if not base_name:
                 QMessageBox.warning(self, "Advertencia", f"No se encontró histograma para el Detector {i+1}.")
                 continue
-            # Construir el nombre del histograma según el tipo seleccionado
+            # Construir el nombre del histograma según el sufijo seleccionado
             if self.hist_type:
                 hist_name = f"{base_name}_{self.hist_type}"
             else:
@@ -397,7 +435,7 @@ class PlotRootHistograms(QWidget):
                 zoom_text = f"_Zoom_{lower}_{upper}"
             except ValueError:
                 zoom_text = "_Zoom"
-        file_name = f"{timestamp}_Canvas_{self.hist_type}.png"
+        file_name = f"{timestamp}_Canvas_{self.hist_type}{zoom_text}.png"
         full_path = os.path.join(directory, file_name)
         self.fig.savefig(full_path)
         QMessageBox.information(self.canvas_window, "Éxito", f"Canvas guardado como {full_path}")

@@ -397,7 +397,7 @@ class ReportGenerationThread(QThread):
                 elementos.append(Paragraph(descripcion, styles['Texto']))
 
                 # Agregar gráficos si existen
-                for i in range(1, 6):
+                for i in range(1, 50):
                     archivo_grafico = row.get(f'Archivo Grafico {i}')
                     if pd.notna(archivo_grafico) and os.path.exists(archivo_grafico):
                         # Escalar la imagen al ancho disponible manteniendo la relación de aspecto

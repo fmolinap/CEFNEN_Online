@@ -134,10 +134,11 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             for j in range(1, len(neutron_counts)):
                 delta_counts = neutron_counts[j] - neutron_counts[j-1]
                 delta_time = (timestamps[j] - timestamps[j-1]) / np.timedelta64(1, 's')
-                if delta_time > 0:
-                    rate = delta_counts / delta_time
+                # Modificación para ignorar delta_counts negativos
+                if delta_counts < 0 or delta_time <= 0:
+                    rate = np.nan  # Ignorar este punto
                 else:
-                    rate = np.nan  # Manejar casos donde delta_time es cero o negativo
+                    rate = delta_counts / delta_time
                 counting_rates.append(rate)
             # Para el primer dato, asignar NaN
             counting_rates.insert(0, np.nan)
@@ -159,8 +160,11 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         report_lines.append(f"Tiempo total de experimento: {total_time_str}")
         report_lines.append("\n")
         for i in range(1, self.num_detectors +1):
-            rates = self.df_rates[f"detector_{i}_counting_rate"].dropna()
+            rates = self.df_rates[f"detector_{i}_counting_rate"]
+            # Excluir counting rates negativos o NaN
+            rates = rates[rates > 0].dropna()
             if len(rates) == 0:
+                report_lines.append(f"Detector {i}: No hay datos válidos para calcular estadísticas.\n")
                 continue
             mean = np.mean(rates)
             std = np.std(rates)
@@ -208,7 +212,9 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         # Graficar histogramas
         for idx in range(num_detectors):
             detector_num = idx + 1
-            rates = self.df_rates[f"detector_{detector_num}_counting_rate"].dropna()
+            rates = self.df_rates[f"detector_{detector_num}_counting_rate"]
+            # Excluir counting rates negativos o NaN
+            rates = rates[rates > 0].dropna()
             if len(rates) == 0:
                 continue
             # Determinar automáticamente el número de bins
@@ -255,8 +261,8 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         for i in range(1, self.num_detectors +1):
             rates = self.df_rates[f"detector_{i}_counting_rate"]
             timestamps = self.df_rates['timestamp']
-            # Excluir valores NaN
-            valid_indices = ~rates.isna()
+            # Excluir counting rates negativos o NaN
+            valid_indices = (rates > 0) & (~rates.isna())
             rates = rates[valid_indices]
             timestamps = timestamps[valid_indices]
             if len(rates) == 0:
@@ -273,6 +279,10 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             outliers = rates[outlier_indices]
             outlier_timestamps = timestamps[outlier_indices]
             outliers_info[f"Detector {i}"] = list(zip(outliers, outlier_timestamps))
+        # Verificar si hay datos para graficar
+        if not data:
+            QMessageBox.information(self, "Información", "No hay datos válidos para generar los boxplots.")
+            return
         # Crear boxplot
         fig, ax = plt.subplots(figsize=(12, 8))
         ax.boxplot(data, labels=labels, showfliers=True)
