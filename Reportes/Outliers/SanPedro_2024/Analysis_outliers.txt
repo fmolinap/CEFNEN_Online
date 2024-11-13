@@ -1,0 +1,69 @@
+Detector 1 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 11:34:21, Counting Rate: 0.4053 cps
+
+
+Detector 2 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 11:34:21, Counting Rate: 0.5358 cps
+  Timestamp: 2024-11-11 20:30:04, Counting Rate: 0.5265 cps
+  Timestamp: 2024-11-11 23:00:05, Counting Rate: 0.5128 cps
+  Timestamp: 2024-11-12 18:00:47, Counting Rate: 0.5132 cps
+  Timestamp: 2024-11-13 19:23:55, Counting Rate: 0.5148 cps
+
+
+Detector 3 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 03:34:36, Counting Rate: 0.2238 cps
+  Timestamp: 2024-11-11 22:02:31, Counting Rate: 0.2222 cps
+  Timestamp: 2024-11-11 22:30:09, Counting Rate: 0.1580 cps
+
+
+Detector 4 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-13 01:30:27, Counting Rate: 0.1982 cps
+
+
+Detector 5 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 11:34:21, Counting Rate: 0.0218 cps
+
+
+Detector 6 no tiene outliers.
+
+
+Detector 7 no tiene outliers.
+
+
+Detector 8 no tiene outliers.
+
+
+Detector 9 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-12 09:03:24, Counting Rate: 0.0244 cps
+
+
+Detector 10 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 07:30:54, Counting Rate: 0.3512 cps
+  Timestamp: 2024-11-12 20:17:22, Counting Rate: 0.4463 cps
+
+
+Detector 11 no tiene outliers.
+
+
+Detector 12 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 02:24:59, Counting Rate: 0.0719 cps
+  Timestamp: 2024-11-11 09:00:33, Counting Rate: 0.0725 cps
+
+
+Detector 13 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 04:00:15, Counting Rate: 0.0312 cps
+
+
+Detector 14 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 18:17:43, Counting Rate: 0.2535 cps
+  Timestamp: 2024-11-11 22:02:31, Counting Rate: 0.2500 cps
+
+
+Detector 15 no tiene outliers.
+
+
+Detector 16 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-11 04:38:46, Counting Rate: 0.1389 cps
+  Timestamp: 2024-11-12 12:52:04, Counting Rate: 0.1401 cps
+  Timestamp: 2024-11-13 00:30:10, Counting Rate: 0.1366 cps
+

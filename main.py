@@ -15,6 +15,7 @@ from agregar_datos import AgregarDatos
 from calibrate import Calibrate
 from plot_cr_evo import PlotCREvo
 from plot_comparison import PlotComparison
+from plot_meteorological_data import PlotMeteorologicalData  # Nuevo módulo
 from noise_analysis import NoiseAnalysis
 from calibration_root import CalibrationRoot
 from recalibrate_root import RecalibrateRoot
@@ -28,7 +29,7 @@ from incident_report import IncidentReport
 from reporte_fin_de_campagna import ReporteFinCampagnaWindow
 from generar_archivo_calibracion import GenerarArchivoCalibracionGASIFIC
 from plot_root_histograms import PlotRootHistograms
-from analisis_estadistico_descriptivo import AnalisisEstadisticoDescriptivo  # Importar el nuevo módulo
+from analisis_estadistico_descriptivo import AnalisisEstadisticoDescriptivo
 
 # Importar funciones y clases adicionales
 from monitoreo_archivos_remotos import MonitoringThread, MonitoringDialog
@@ -192,6 +193,12 @@ class MainApp(QMainWindow):
         btn_plot_root_histograms.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(btn_plot_root_histograms)
 
+        # Nuevo botón para graficar datos de estación meteorológica
+        btn_plot_meteorological_data = QPushButton("Plot Meteorological Data")
+        btn_plot_meteorological_data.clicked.connect(self.open_plot_meteorological_data)
+        btn_plot_meteorological_data.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(btn_plot_meteorological_data)
+
         layout.addStretch()
 
     def create_calibration_buttons(self, layout):
@@ -272,25 +279,45 @@ class MainApp(QMainWindow):
         self.stop_monitor_button.setEnabled(False)  # Deshabilitado inicialmente
         monitor_layout.addWidget(self.stop_monitor_button)
 
-        self.monitor_status_label = QLabel("Monitoreo: <font color='red'>OFF</font>")
+        self.monitor_status_label = QLabel("Monitoring: <font color='red'>OFF</font>")
         self.monitor_status_label.setAlignment(Qt.AlignCenter)
         monitor_layout.addWidget(self.monitor_status_label)
 
         layout.addLayout(monitor_layout)
 
-        # Etiquetas para mostrar los últimos archivos
-        self.last_root_label = QLabel("Último archivo ROOT: N/A")
-        self.last_root_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.last_root_label)
+        # Etiquetas para mostrar los últimos archivos y el tiempo total de medida
+        info_layout = QGridLayout()
+        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setSpacing(2)
 
-        self.last_dlt_label = QLabel("Último archivo DLT: N/A")
+        small_font_size = "font-size: 10px;"
+
+        self.last_root_label = QLabel("Last ROOT file: N/A")
+        self.last_root_label.setAlignment(Qt.AlignCenter)
+        self.last_root_label.setStyleSheet(small_font_size)
+        info_layout.addWidget(self.last_root_label, 0, 0)
+
+        self.last_dlt_label = QLabel("Last DLT file: N/A")
         self.last_dlt_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.last_dlt_label)
+        self.last_dlt_label.setStyleSheet(small_font_size)
+        info_layout.addWidget(self.last_dlt_label, 0, 1)
+
+        self.meteor_file_size_label = QLabel("Size MS file: N/A")
+        self.meteor_file_size_label.setAlignment(Qt.AlignCenter)
+        self.meteor_file_size_label.setStyleSheet(small_font_size)
+        info_layout.addWidget(self.meteor_file_size_label, 1, 0)
+
+        self.total_measurement_time_label = QLabel("Total Measurement Time: N/A")
+        self.total_measurement_time_label.setAlignment(Qt.AlignCenter)
+        self.total_measurement_time_label.setStyleSheet(small_font_size)
+        info_layout.addWidget(self.total_measurement_time_label, 1, 1)
+
+        layout.addLayout(info_layout)
 
     def start_monitoring(self):
         dialog = MonitoringDialog(self)
         if dialog.exec() == QDialog.Accepted:
-            campaign, ip, username, password = dialog.get_monitoring_info()
+            campaign, ip, username, password, smb_username, smb_password, smb_ip, smb_hostname = dialog.get_monitoring_info()
 
             campaign_info = get_campaign_info(campaign)
             if campaign_info is None:
@@ -301,7 +328,17 @@ class MainApp(QMainWindow):
             dlt_path = campaign_info.get('DLT Path')
 
             # Iniciar el hilo de monitoreo
-            self.monitoring_thread = MonitoringThread(ip, username, password, root_path, dlt_path)
+            self.monitoring_thread = MonitoringThread(
+                ip,
+                username,
+                password,
+                root_path,
+                dlt_path,
+                smb_username,
+                smb_password,
+                smb_ip,
+                smb_hostname
+            )
             self.monitoring_thread.monitoring_status_changed.connect(self.update_monitor_status)
             self.monitoring_thread.error_signal.connect(self.handle_monitoring_error)
             self.monitoring_thread.new_files_detected.connect(self.update_last_files)
@@ -318,23 +355,35 @@ class MainApp(QMainWindow):
 
     def update_monitor_status(self, status):
         if status:
-            self.monitor_status_label.setText("Monitoreo: <font color='green'>ON</font>")
+            self.monitor_status_label.setText("Monitoring: <font color='green'>ON</font>")
             self.start_monitor_button.setEnabled(False)
             self.stop_monitor_button.setEnabled(True)
         else:
-            self.monitor_status_label.setText("Monitoreo: <font color='red'>OFF</font>")
+            self.monitor_status_label.setText("Monitoring: <font color='red'>OFF</font>")
             self.start_monitor_button.setEnabled(True)
             self.stop_monitor_button.setEnabled(False)
-            self.last_root_label.setText("Último archivo ROOT: N/A")
-            self.last_dlt_label.setText("Último archivo DLT: N/A")
+            self.last_root_label.setText("Last ROOT file: N/A")
+            self.last_dlt_label.setText("Last DLT file: N/A")
+            self.meteor_file_size_label.setText("Size MS file: N/A")
+            self.total_measurement_time_label.setText("Total Measurement Time: N/A")
 
     def handle_monitoring_error(self, error_message):
         QMessageBox.critical(self, "Error en el Monitoreo", f"Ocurrió un error durante el monitoreo:\n{error_message}")
         self.update_monitor_status(False)
 
-    def update_last_files(self, last_root_file, last_dlt_file):
-        self.last_root_label.setText(f"Último archivo ROOT: {last_root_file}")
-        self.last_dlt_label.setText(f"Último archivo DLT: {last_dlt_file}")
+    def update_last_files(self, last_root_file, last_dlt_file, meteor_file_size, total_measurement_time):
+        self.last_root_label.setText(f"Last ROOT file: {last_root_file}")
+        self.last_dlt_label.setText(f"Last DLT file: {last_dlt_file}")
+        if meteor_file_size >= 0:
+            size_kb = meteor_file_size / 1024
+            self.meteor_file_size_label.setText(f"Size MS file: {size_kb:.2f} KB")
+        else:
+            self.meteor_file_size_label.setText("Size MS file: N/A")
+        # Actualizar el tiempo total de medida
+        days, remainder = divmod(total_measurement_time, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, _ = divmod(remainder, 60)
+        self.total_measurement_time_label.setText(f"Total Measurement Time: {int(days)}d {int(hours)}h {int(minutes)}m")
 
     # Métodos para abrir las diferentes ventanas
     def open_create_campaign(self):
@@ -367,7 +416,7 @@ class MainApp(QMainWindow):
 
     def open_incident_report(self):
         # Obtener el último archivo DLT desde la etiqueta
-        last_dlt_file = self.last_dlt_label.text().replace("Último archivo DLT: ", "")
+        last_dlt_file = self.last_dlt_label.text().replace("Last DLT file: ", "")
         if last_dlt_file == "N/A":
             last_dlt_file = ""
         widget = IncidentReport(back_callback=self.return_to_main_window, last_dlt_file=last_dlt_file)
@@ -387,6 +436,10 @@ class MainApp(QMainWindow):
 
     def open_plot_root_histograms(self):
         widget = PlotRootHistograms(back_callback=self.return_to_main_window)
+        self.show_new_widget(widget)
+
+    def open_plot_meteorological_data(self):
+        widget = PlotMeteorologicalData(back_callback=self.return_to_main_window)
         self.show_new_widget(widget)
 
     def open_calibrate(self):
@@ -428,6 +481,11 @@ def main():
     import sys
     app = QApplication(sys.argv)
     window = MainApp()
+    # Ajustar el tamaño de la ventana para que ocupe la mitad izquierda de la pantalla
+    screen_geometry = app.primaryScreen().availableGeometry()
+    screen_width = screen_geometry.width()
+    screen_height = screen_geometry.height()
+    window.setGeometry(0, 0, screen_width // 2, screen_height)
     window.show()
     sys.exit(app.exec())
 
