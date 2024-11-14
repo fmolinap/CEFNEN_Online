@@ -88,6 +88,7 @@ class PlotMeteorologicalData(QWidget):
         self.campaign_combo = QComboBox()
         campaigns = get_existing_campaigns()
         self.campaign_combo.addItems(campaigns)
+        self.campaign_combo.setCurrentIndex(len(campaigns) - 1)
         campaign_layout.addWidget(campaign_label)
         campaign_layout.addWidget(self.campaign_combo)
         layout.addLayout(campaign_layout)
@@ -175,6 +176,7 @@ class PlotMeteorologicalData(QWidget):
         # Botón para regresar
         self.back_button = QPushButton("Regresar")
         self.back_button.clicked.connect(self.back)
+        self.back_button.setStyleSheet("background-color: #f44336; color: white;")
         layout.addWidget(self.back_button)
 
     def get_campaign_date_range(self):

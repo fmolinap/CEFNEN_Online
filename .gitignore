@@ -1,0 +1,15 @@
+# Ignorar todas las carpetas
+*/
+
+# Permitir archivos Python en la raíz
+!*.py
+!Logo_CEFNEN.png
+# Excluir archivos específicos si es necesario
+template.tex
+README.md
+.DS_Store
+
+# Ignorar carpetas y archivos generados automáticamente
+__pycache__/
+*.pyc
+*.pyo

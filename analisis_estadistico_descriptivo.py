@@ -2,7 +2,7 @@
 
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
-    QMessageBox, QPlainTextEdit, QTabWidget
+    QMessageBox, QPlainTextEdit, QTabWidget, QDialog
 )
 from PySide6.QtCore import Qt
 import os
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from utils import get_existing_campaigns, get_num_detectors
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 class AnalisisEstadisticoDescriptivo(QWidget):
     def __init__(self, back_callback=None):
@@ -22,17 +23,19 @@ class AnalisisEstadisticoDescriptivo(QWidget):
     def init_ui(self):
         self.setWindowTitle("Análisis Estadístico Descriptivo")
         #self.resize(800, 600)
-        
+
+        # Crear el layout principal y establecerlo
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
-        
-        # Selección de campaña
+
+        # Layout para la selección de campaña
         campaign_layout = QHBoxLayout()
         campaign_label = QLabel("Seleccionar Campaña:")
         self.campaign_combo = QComboBox()
         self.campaigns = get_existing_campaigns()
         if self.campaigns:
             self.campaign_combo.addItems(self.campaigns)
+            self.campaign_combo.setCurrentIndex(len(self.campaigns) - 1)
         else:
             self.campaign_combo.addItem("No hay campañas disponibles")
         campaign_layout.addWidget(campaign_label)
@@ -206,6 +209,8 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             return
         if not self.calculate_counting_rates():
             return
+        # Cerrar todas las figuras abiertas previamente
+        plt.close('all')
         # Preparar datos para graficar
         num_detectors = self.num_detectors
         num_histograms = num_detectors
@@ -255,14 +260,17 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         histogram_file = os.path.join(graphics_dir, f"Histogramas_CR_{self.short_name}.png")
         fig.savefig(histogram_file)
         QMessageBox.information(self, "Éxito", f"Histogramas guardados en {histogram_file}")
-        # Mostrar figura
-        plt.show()
+        # Mostrar figura en un diálogo
+        self.show_figure_in_dialog(fig, "Histogramas de Counting Rates")
+        # No es necesario llamar a plt.show()
     
     def plot_boxplots(self):
         if not self.load_data():
             return
         if not self.calculate_counting_rates():
             return
+        # Cerrar todas las figuras abiertas previamente
+        plt.close('all')
         # Preparar datos
         data = []
         labels = []
@@ -303,8 +311,9 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         boxplot_file = os.path.join(graphics_dir, f"BoxPlot_CR_{self.short_name}.png")
         fig.savefig(boxplot_file)
         QMessageBox.information(self, "Éxito", f"Boxplots guardados en {boxplot_file}")
-        # Mostrar figura
-        plt.show()
+        # Mostrar figura en un diálogo
+        self.show_figure_in_dialog(fig, "Boxplots de Counting Rates")
+        # No es necesario llamar a plt.show()
         # Generar reporte de outliers
         outliers_report = []
         for detector, outliers_list in outliers_info.items():
@@ -328,6 +337,19 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         self.tabs.setCurrentWidget(self.outliers_display)
         # Mostrar mensaje de éxito
         QMessageBox.information(self, "Éxito", f"Análisis de outliers guardado en {outliers_file}")
+    
+    def show_figure_in_dialog(self, fig, title="Figure"):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        layout = QVBoxLayout()
+        canvas = FigureCanvas(fig)
+        toolbar = NavigationToolbar(canvas, dialog)
+        layout.addWidget(toolbar)
+        layout.addWidget(canvas)
+        dialog.setLayout(layout)
+        dialog.exec()
+        # Cerrar la figura después de mostrarla
+        plt.close(fig)
     
     def back(self):
         if callable(self.back_callback):

@@ -102,18 +102,20 @@ class MainApp(QMainWindow):
         separator.setFrameShadow(QFrame.Sunken)
         top_layout.addWidget(separator)
 
-        # Sección central: Área de contenido cambiante con scroll
-        content_scroll_area = QScrollArea()
-        content_scroll_area.setWidgetResizable(True)
-        main_layout.addWidget(content_scroll_area)
-
+        # Sección central: Área de contenido cambiante sin scroll
         self.content_widget = QStackedWidget()
-        content_scroll_area.setWidget(self.content_widget)
+        main_layout.addWidget(self.content_widget)
 
         # Añadir la ventana principal al QStackedWidget
         self.main_window_widget = QWidget()
         self.create_main_window_ui(self.main_window_widget)
         self.content_widget.addWidget(self.main_window_widget)
+
+        # Añadir un placeholder para los subprogramas
+        self.subprogram_scroll_area = QScrollArea()
+        self.subprogram_scroll_area.setWidgetResizable(True)
+        # No se establece ningún widget todavía
+        self.content_widget.addWidget(self.subprogram_scroll_area)
 
         # Mostrar la ventana principal
         self.content_widget.setCurrentWidget(self.main_window_widget)
@@ -274,7 +276,7 @@ class MainApp(QMainWindow):
         self.start_monitor_button.setStyleSheet("background-color: green; color: white;")
         monitor_layout.addWidget(self.start_monitor_button)
 
-        self.exit_button = QPushButton("Salir")
+        self.exit_button = QPushButton("Salir de CEFNEN Online")
         self.exit_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.exit_button.clicked.connect(self.exit_application)
         self.exit_button.setStyleSheet("background-color: red; color: white;")
@@ -291,7 +293,7 @@ class MainApp(QMainWindow):
         info_layout.setContentsMargins(0, 0, 0, 0)
         info_layout.setSpacing(2)
 
-        small_font_size = "font-size: 10px;"
+        small_font_size = "font-size: 15px;"
 
         self.last_root_label = QLabel("Last ROOT file: N/A")
         self.last_root_label.setAlignment(Qt.AlignCenter)
@@ -474,10 +476,15 @@ class MainApp(QMainWindow):
         self.show_new_widget(widget)
 
     def show_new_widget(self, widget):
-        self.content_widget.addWidget(widget)
-        self.content_widget.setCurrentWidget(widget)
+        # Establecer el widget dentro del scroll area
+        self.subprogram_scroll_area.setWidget(widget)
+        # Cambiar al scroll area que contiene el subprograma
+        self.content_widget.setCurrentWidget(self.subprogram_scroll_area)
 
     def return_to_main_window(self):
+        # Quitar el widget del scroll area
+        self.subprogram_scroll_area.takeWidget()
+        # Cambiar de vuelta a la ventana principal
         self.content_widget.setCurrentWidget(self.main_window_widget)
 
 def main():
