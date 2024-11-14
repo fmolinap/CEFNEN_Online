@@ -24,7 +24,7 @@ class PlotMeteorologicalData(QWidget):
 
         # Definir los grupos de variables
         self.variable_groups = {
-            "Variables locales Meteorológicas": {
+            "Variables_locales_Meteorológicas": {
                 "variables": [
                     ("WS_ms_Avg", "Velocidad del viento en m/s"),
                     ("BP_mbar_Avg", "Presión Atmosférica en mbar"),
@@ -34,7 +34,7 @@ class PlotMeteorologicalData(QWidget):
                     ("SlrW_Avg", "Intensidad Solar medida en Watts")
                 ]
             },
-            "Humedad de Suelo": {
+            "Humedad_de_Suelo": {
                 "variables": [
                     ("VWC_5cm", "Humedad del suelo a 5 cm"),
                     ("VWC_10cm", "Humedad del suelo a 10 cm"),
@@ -44,7 +44,7 @@ class PlotMeteorologicalData(QWidget):
                     ("VWC_50cm", "Humedad del suelo a 50 cm")
                 ]
             },
-            "Temperatura del Suelo": {
+            "Temperatura_del_Suelo": {
                 "variables": [
                     ("TC_5cm", "Temperatura del suelo a 5 cm"),
                     ("TC_10cm", "Temperatura del suelo a 10 cm"),
@@ -54,7 +54,7 @@ class PlotMeteorologicalData(QWidget):
                     ("TC_50cm", "Temperatura del suelo a 50 cm")
                 ]
             },
-            "Permitividad Eléctrica del Suelo": {
+            "Permitividad_Eléctrica_del_Suelo": {
                 "variables": [
                     ("Perm_5cm", "Permitividad del suelo a 5 cm"),
                     ("Perm_10cm", "Permitividad del suelo a 10 cm"),
@@ -64,7 +64,7 @@ class PlotMeteorologicalData(QWidget):
                     ("Perm_50cm", "Permitividad del suelo a 50 cm")
                 ]
             },
-            "Conductividad Eléctrica del Suelo": {
+            "Conductividad_Eléctrica_del_Suelo": {
                 "variables": [
                     ("EC_5cm", "Conductividad Eléctrica del suelo a 5 cm"),
                     ("EC_10cm", "Conductividad Eléctrica del suelo a 10 cm"),
@@ -162,7 +162,7 @@ class PlotMeteorologicalData(QWidget):
         layout.addWidget(self.groups_groupbox)
 
         for group_name in self.variable_groups.keys():
-            checkbox = QCheckBox(group_name)
+            checkbox = QCheckBox(group_name.replace('_', ' '))
             self.groups_layout.addWidget(checkbox)
             self.group_checkboxes.append(checkbox)
 
@@ -272,7 +272,7 @@ class PlotMeteorologicalData(QWidget):
             return
 
     def plot_data(self):
-        selected_groups = [cb.text() for cb in self.group_checkboxes if cb.isChecked()]
+        selected_groups = [cb.text().replace(' ', '_') for cb in self.group_checkboxes if cb.isChecked()]
         if not selected_groups:
             QMessageBox.warning(self, "Advertencia", "Debe seleccionar al menos un grupo para graficar.")
             return
@@ -306,10 +306,12 @@ class PlotMeteorologicalData(QWidget):
             fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
             axes = axes.flatten()
 
+            colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
             for idx, (var_name, var_label) in enumerate(variables):
                 ax = axes[idx]
                 if var_name in df.columns:
-                    ax.plot(df['TIMESTAMP'], df[var_name], label=var_label)
+                    color = colors[idx % len(colors)]
+                    ax.plot(df['TIMESTAMP'], df[var_name], label=var_label, color=color)
                     ax.set_title(var_label)
                     ax.set_xlabel('Fecha y Hora')
                     ax.set_ylabel(var_label)
@@ -322,14 +324,13 @@ class PlotMeteorologicalData(QWidget):
             for idx in range(len(variables), len(axes)):
                 fig.delaxes(axes[idx])
 
-            fig.suptitle(f'{group_name} - {short_name}')
+            fig.suptitle(f'{group_name.replace("_", " ")} - {short_name}')
             fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-            # Guardar el gráfico
+            # Guardar el gráfico sin fecha y hora en el nombre del archivo
             output_dir = f'./Graficos/EstacionMeteorologica/{short_name}'
             os.makedirs(output_dir, exist_ok=True)
-            timestamp_str = datetime.now().strftime('%Y%m%d_%H%M')
-            filename = f'{timestamp_str}_{group_name.replace(" ", "_")}_{short_name}.png'
+            filename = f'{group_name}_{short_name}.png'
             filepath = os.path.join(output_dir, filename)
             fig.savefig(filepath)
 

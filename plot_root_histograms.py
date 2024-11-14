@@ -32,7 +32,7 @@ class PlotRootHistograms(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Visualización de Histogramas desde Archivo ROOT")
-        self.resize(1000, 800)
+        # self.resize(1000, 800)  # Comentado para permitir ajuste automático
 
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
@@ -169,7 +169,7 @@ class PlotRootHistograms(QWidget):
         # Crear interfaz de mapeo
         mapping_dialog = QDialog(self)
         mapping_dialog.setWindowTitle("Mapeo de Histogramas a Detectores")
-        mapping_dialog.resize(600, 400)
+        # mapping_dialog.resize(600, 400)  # Comentado para permitir ajuste automático
         layout = QVBoxLayout(mapping_dialog)
 
         # Cargar mapeo existente o crear uno nuevo
@@ -329,7 +329,10 @@ class PlotRootHistograms(QWidget):
         # Crear una nueva ventana para el canvas
         self.canvas_window = QDialog(self)
         self.canvas_window.setWindowTitle("Visualización de Histogramas")
-        self.canvas_window.showFullScreen()  # Mostrar en pantalla completa
+        # self.canvas_window.showFullScreen()  # Comentado para evitar pantalla completa
+
+        # Ajustar el tamaño de la ventana al tamaño principal
+        self.canvas_window.resize(self.width(), self.height())
 
         # Crear figura y ejes con mayor espacio entre subplots
         self.fig, self.ax_arr = plt.subplots(grid_size, grid_size, figsize=(16, 9))
@@ -402,6 +405,8 @@ class PlotRootHistograms(QWidget):
         self.canvas_window.setLayout(canvas_layout)
         self.zoom_applied = False
 
+        self.canvas_window.exec()
+
     def apply_zoom_in_canvas(self):
         if not hasattr(self, 'canvas_window') or not self.canvas_window.isVisible():
             QMessageBox.critical(self.canvas_window, "Error", "No hay histogramas cargados o la ventana de canvas está cerrada.")
@@ -426,16 +431,8 @@ class PlotRootHistograms(QWidget):
             return
         directory = f"./Graficos/Canvas/{self.short_name}"
         os.makedirs(directory, exist_ok=True)
-        timestamp = datetime.now().strftime("%y%m%d_%H%M")
-        zoom_text = ""
-        if self.zoom_applied:
-            try:
-                lower = float(self.zoom_lower_in_canvas.text())
-                upper = float(self.zoom_upper_in_canvas.text())
-                zoom_text = f"_Zoom_{lower}_{upper}"
-            except ValueError:
-                zoom_text = "_Zoom"
-        file_name = f"{timestamp}_Canvas_{self.hist_type}{zoom_text}.png"
+        # No incluir timestamp ni información de zoom en el nombre del archivo
+        file_name = f"Canvas_{self.hist_type}.png"
         full_path = os.path.join(directory, file_name)
         self.fig.savefig(full_path)
         QMessageBox.information(self.canvas_window, "Éxito", f"Canvas guardado como {full_path}")

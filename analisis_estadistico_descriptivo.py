@@ -21,7 +21,7 @@ class AnalisisEstadisticoDescriptivo(QWidget):
     
     def init_ui(self):
         self.setWindowTitle("Análisis Estadístico Descriptivo")
-        self.resize(800, 600)
+        #self.resize(800, 600)
         
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
@@ -134,11 +134,20 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             for j in range(1, len(neutron_counts)):
                 delta_counts = neutron_counts[j] - neutron_counts[j-1]
                 delta_time = (timestamps[j] - timestamps[j-1]) / np.timedelta64(1, 's')
-                # Modificación para ignorar delta_counts negativos
+                # Modificación para ignorar delta_counts negativos y ratios > 5
                 if delta_counts < 0 or delta_time <= 0:
                     rate = np.nan  # Ignorar este punto
                 else:
-                    rate = delta_counts / delta_time
+                    previous_count = neutron_counts[j-1]
+                    current_count = neutron_counts[j]
+                    if previous_count == 0:
+                        ratio = np.inf
+                    else:
+                        ratio = current_count / previous_count
+                    if ratio > 5:
+                        rate = np.nan  # Ignorar este punto
+                    else:
+                        rate = delta_counts / delta_time
                 counting_rates.append(rate)
             # Para el primer dato, asignar NaN
             counting_rates.insert(0, np.nan)

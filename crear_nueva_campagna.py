@@ -1,3 +1,5 @@
+# crear_nueva_campagna.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
     QRadioButton, QButtonGroup, QGridLayout
@@ -20,7 +22,7 @@ class CrearNuevaCampagna(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Creando Nueva Campaña Experimental CEFNEN")
-        self.resize(900, 700)
+        # self.resize(900, 700)  # Eliminado para permitir ajuste automático
 
         # Layout principal
         self.main_layout = QVBoxLayout(self)
@@ -434,9 +436,6 @@ class CrearNuevaCampagna(QWidget):
         # Guardar la información de la campaña
         df_info = pd.concat([df_info, pd.DataFrame([campaign_info])], ignore_index=True)
         df_info.to_csv(info_file, index=False)
-
-        # Ya no es necesario guardar la imagen del mapa
-        # self.save_map_image(campaign_info["Latitud"], campaign_info["Longitud"], campaign_info["Nombre Corto"])
 
         file_name = f"./data/{campaign_info['Nombre Corto']}-CountingRate.csv"
         header = ["timestamp", "dlt_file"]

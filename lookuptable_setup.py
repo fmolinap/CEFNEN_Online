@@ -1,3 +1,5 @@
+# lookuptable_setup.py
+
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
     QTableWidget, QTableWidgetItem, QApplication, QMessageBox, QHeaderView,
@@ -91,7 +93,7 @@ class LookUpTableSetup(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("LookUpTable de la Configuración de Detectores")
-        self.resize(1600, 1200)  # Aumentar tamaño para acomodar nuevos elementos
+        # self.resize(1600, 1200)  # Eliminado para permitir ajuste automático
 
         # Layout principal
         self.main_layout = QVBoxLayout(self)
@@ -411,8 +413,6 @@ class LookUpTableSetup(QWidget):
             combo.clear()
             combo.addItems(options)
             combo.setCurrentText(current_values[header])
-            # No deshabilitar el ComboBox después de establecer el texto
-            # Para permitir que el usuario lo edite
             combo.blockSignals(False)
 
         # Habilitar el botón "Aceptar" nuevamente
@@ -783,7 +783,7 @@ class LookUpTableSetup(QWidget):
 
                         edit_button = self.table.cellWidget(row, len(headers) + 2)
                         edit_button.setEnabled(True)
-                    
+
                     # Establecer "DAQ" en posición (5,3) si no está asignada
                     self.set_default_position_daq()
 
@@ -794,3 +794,10 @@ class LookUpTableSetup(QWidget):
                     QMessageBox.information(self, "Éxito", f"LookUpTable cargada exitosamente desde {file_path}")
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"No se pudo cargar la LookUpTable: {str(e)}")
+
+if __name__ == "__main__":
+    import sys
+    app = QApplication(sys.argv)
+    window = LookUpTableSetup()
+    window.show()
+    sys.exit(app.exec())

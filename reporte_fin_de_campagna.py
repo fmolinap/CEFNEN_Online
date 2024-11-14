@@ -36,7 +36,7 @@ class ReporteFinCampagnaWindow(QWidget):
         super().__init__(parent)
         self.back_callback = back_callback
         self.setWindowTitle("Generar Reporte Fin de Campaña")
-        self.resize(600, 400)
+        # self.resize(600, 400)  # Comentado para permitir ajuste automático al tamaño de la ventana principal
         self.init_ui()
 
     def init_ui(self):
@@ -426,18 +426,16 @@ class ReportGenerationThread(QThread):
 
         noise_reports_dir = os.path.join(base_dir, "reports", "noise")
         if os.path.exists(noise_reports_dir):
-            noise_report_files = sorted([f for f in os.listdir(noise_reports_dir) if f.endswith('.txt') and nombre_corto in f])
+            noise_report_files = [f for f in os.listdir(noise_reports_dir) if f.endswith('.txt') and nombre_corto in f]
             if noise_report_files:
-                for idx, noise_file in enumerate(noise_report_files):
-                    reporte_titulo = f"- Reporte: {noise_file}"
-                    elementos.append(Paragraph(reporte_titulo, styles['Subtitulo']))
-                    with open(os.path.join(noise_reports_dir, noise_file), 'r', encoding='utf-8') as f:
-                        contenido_reporte = f.read()
-                    elementos.append(Paragraph(contenido_reporte.replace('\n', '<br/>'), styles['Texto']))
-                    
-                    # Agregar un espacio entre reportes, no un PageBreak
-                    if idx < len(noise_report_files) - 1:
-                        elementos.append(Spacer(1, 12))  # Doble salto de línea
+                # Ordenar los archivos por fecha de modificación
+                noise_report_files.sort(key=lambda f: os.path.getmtime(os.path.join(noise_reports_dir, f)), reverse=True)
+                latest_noise_file = noise_report_files[0]
+                reporte_titulo = f"- Reporte: {latest_noise_file}"
+                elementos.append(Paragraph(reporte_titulo, styles['Subtitulo']))
+                with open(os.path.join(noise_reports_dir, latest_noise_file), 'r', encoding='utf-8') as f:
+                    contenido_reporte = f.read()
+                elementos.append(Paragraph(contenido_reporte.replace('\n', '<br/>'), styles['Texto']))
             else:
                 elementos.append(Paragraph("No se encontraron reportes de ruido.", styles['Texto']))
         else:
@@ -486,7 +484,97 @@ class ReportGenerationThread(QThread):
         else:
             elementos.append(Paragraph("No se encontró el directorio de calibraciones.", styles['Texto']))
 
+        self.progress.emit(85)
+
+        # Capítulo 6: Análisis Estadístico Descriptivo
+        elementos.append(Paragraph("Capítulo 6: Análisis Estadístico Descriptivo", styles['Capitulo']))
+
+        # Subcapítulo 6.1: Neutron Counting Rates
+        elementos.append(Paragraph("6.1 Neutron Counting Rates", styles['Subtitulo']))
+        aed_counting_rates_file = os.path.join(base_dir, "Reportes", "Analisis_Estadistico_Descriptivo", nombre_corto, "AED_counting_rates.txt")
+        if os.path.exists(aed_counting_rates_file):
+            with open(aed_counting_rates_file, 'r', encoding='utf-8') as f:
+                aed_content = f.read()
+            elementos.append(Paragraph(aed_content.replace('\n', '<br/>'), styles['Texto']))
+        else:
+            elementos.append(Paragraph("No se encontró el archivo de Neutron Counting Rates.", styles['Texto']))
+
+        # Subcapítulo 6.2: Distribución de Counting rates por detector
+        elementos.append(Paragraph("6.2 Distribución de Counting Rates por Detector", styles['Subtitulo']))
+        histogram_image_path = os.path.join(base_dir, "Graficos", "AnalisisEstadisticoDescriptivo", nombre_corto, "Histogramas", f"Histogramas_CR_{nombre_corto}.png")
+        if os.path.exists(histogram_image_path):
+            # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
+            img = ImageReader(histogram_image_path)
+            original_width, original_height = img.getSize()
+            aspect = original_height / original_width
+            scaled_width = available_width
+            scaled_height = scaled_width * aspect
+
+            imagen = Image(histogram_image_path, width=scaled_width, height=scaled_height)
+            imagen.hAlign = 'CENTER'
+            elementos.append(imagen)
+        else:
+            elementos.append(Paragraph("No se encontró la imagen de Distribución de Counting Rates.", styles['Texto']))
+
+        # Subcapítulo 6.3: Boxplots de Counting Rates de Campaña
+        elementos.append(Paragraph("6.3 Boxplots de Counting Rates de Campaña", styles['Subtitulo']))
+        boxplot_image_path = os.path.join(base_dir, "Graficos", "AnalisisEstadisticoDescriptivo", nombre_corto, "Boxplots", f"BoxPlot_CR_{nombre_corto}.png")
+        if os.path.exists(boxplot_image_path):
+            # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
+            img = ImageReader(boxplot_image_path)
+            original_width, original_height = img.getSize()
+            aspect = original_height / original_width
+            scaled_width = available_width
+            scaled_height = scaled_width * aspect
+
+            imagen = Image(boxplot_image_path, width=scaled_width, height=scaled_height)
+            imagen.hAlign = 'CENTER'
+            elementos.append(imagen)
+        else:
+            elementos.append(Paragraph("No se encontró la imagen de Boxplots de Counting Rates.", styles['Texto']))
+
+        # Subcapítulo 6.4: Reporte de Outliers
+        elementos.append(Paragraph("6.4 Reporte de Outliers", styles['Subtitulo']))
+        outliers_report_file = os.path.join(base_dir, "Reportes", "Outliers", nombre_corto, "Analysis_outliers.txt")
+        if os.path.exists(outliers_report_file):
+            with open(outliers_report_file, 'r', encoding='utf-8') as f:
+                outliers_content = f.read()
+            elementos.append(Paragraph(outliers_content.replace('\n', '<br/>'), styles['Texto']))
+        else:
+            elementos.append(Paragraph("No se encontró el reporte de outliers.", styles['Texto']))
+
+        elementos.append(PageBreak())
+
         self.progress.emit(90)
+
+        # Capítulo 7: Gráficos de Adquisición GASIFIC
+        elementos.append(Paragraph("Capítulo 7: Gráficos de Adquisición GASIFIC", styles['Capitulo']))
+
+        canvas_dir = os.path.join(base_dir, "Graficos", "Canvas", nombre_corto)
+        if os.path.exists(canvas_dir):
+            canvas_images = sorted([f for f in os.listdir(canvas_dir) if f.endswith('.png')])
+            if canvas_images:
+                for image_file in canvas_images:
+                    image_path = os.path.join(canvas_dir, image_file)
+                    # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
+                    img = ImageReader(image_path)
+                    original_width, original_height = img.getSize()
+                    aspect = original_height / original_width
+                    scaled_width = available_width
+                    scaled_height = scaled_width * aspect
+
+                    imagen = Image(image_path, width=scaled_width, height=scaled_height)
+                    imagen.hAlign = 'CENTER'
+                    elementos.append(imagen)
+                    elementos.append(Spacer(1, 12))
+            else:
+                elementos.append(Paragraph("No se encontraron imágenes en la carpeta de Gráficos de Adquisición GASIFIC.", styles['Texto']))
+        else:
+            elementos.append(Paragraph("No se encontró el directorio de Gráficos de Adquisición GASIFIC.", styles['Texto']))
+
+        elementos.append(PageBreak())
+
+        self.progress.emit(95)
 
         # Construir el PDF con numeración de páginas
         doc.build(elementos, onFirstPage=add_page_number, onLaterPages=add_page_number)

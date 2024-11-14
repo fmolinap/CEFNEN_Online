@@ -19,7 +19,7 @@ class IncidentReport(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Reporte de Incidencias")
-        self.resize(800, 600)
+        # self.resize(800, 600)  # Eliminado para permitir ajuste automático
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignTop)
 
@@ -156,7 +156,7 @@ class IncidentReport(QWidget):
     def add_graph(self):
         graph_type, ok = QInputDialog.getItem(
             self, "Seleccionar Tipo de Gráfico", "Tipo de Gráfico:",
-            ["Plot Counting Rate", "Counting Rates Distribution","Boxplot Neutron CR","ROOT Canvas", "Plot Comparison", "Análisis de Ruido", "Nueva LookUpTable"], 0, False
+            ["Plot Counting Rate", "Counting Rates Distribution", "Boxplot Neutron CR", "ROOT Canvas", "Plot Comparison", "Análisis de Ruido", "Nueva LookUpTable"], 0, False
         )
         if not ok:
             return

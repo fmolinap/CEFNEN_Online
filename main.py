@@ -271,13 +271,14 @@ class MainApp(QMainWindow):
         self.start_monitor_button = QPushButton("Iniciar Monitoreo")
         self.start_monitor_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.start_monitor_button.clicked.connect(self.start_monitoring)
+        self.start_monitor_button.setStyleSheet("background-color: green; color: white;")
         monitor_layout.addWidget(self.start_monitor_button)
 
-        self.stop_monitor_button = QPushButton("Terminar Monitoreo")
-        self.stop_monitor_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.stop_monitor_button.clicked.connect(self.stop_monitoring)
-        self.stop_monitor_button.setEnabled(False)  # Deshabilitado inicialmente
-        monitor_layout.addWidget(self.stop_monitor_button)
+        self.exit_button = QPushButton("Salir")
+        self.exit_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.exit_button.clicked.connect(self.exit_application)
+        self.exit_button.setStyleSheet("background-color: red; color: white;")
+        monitor_layout.addWidget(self.exit_button)
 
         self.monitor_status_label = QLabel("Monitoring: <font color='red'>OFF</font>")
         self.monitor_status_label.setAlignment(Qt.AlignCenter)
@@ -353,15 +354,17 @@ class MainApp(QMainWindow):
             self.monitoring_thread.wait()
         self.update_monitor_status(False)
 
+    def exit_application(self):
+        self.stop_monitoring()
+        self.close()
+
     def update_monitor_status(self, status):
         if status:
             self.monitor_status_label.setText("Monitoring: <font color='green'>ON</font>")
             self.start_monitor_button.setEnabled(False)
-            self.stop_monitor_button.setEnabled(True)
         else:
             self.monitor_status_label.setText("Monitoring: <font color='red'>OFF</font>")
             self.start_monitor_button.setEnabled(True)
-            self.stop_monitor_button.setEnabled(False)
             self.last_root_label.setText("Last ROOT file: N/A")
             self.last_dlt_label.setText("Last DLT file: N/A")
             self.meteor_file_size_label.setText("Size MS file: N/A")

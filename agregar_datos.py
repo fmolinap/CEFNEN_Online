@@ -29,7 +29,7 @@ class AgregarDatos(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Agregar Datos a Campaña Existente")
-        self.setFixedSize(900, 700)  # Ventana de tamaño fijo
+        # self.setFixedSize(900, 700)  # Ventana de tamaño fijo (eliminado para ajustar al espacio disponible)
 
         main_layout = QVBoxLayout(self)
         self.setLayout(main_layout)
@@ -50,6 +50,7 @@ class AgregarDatos(QWidget):
         instructions = QTextEdit()
         instructions.setReadOnly(True)
         instructions.setText("Por favor, selecciona una campaña y el método para agregar datos.")
+        instructions.setMaximumHeight(50)
         main_layout.addWidget(instructions)
 
         content_stack = QTabWidget(self)

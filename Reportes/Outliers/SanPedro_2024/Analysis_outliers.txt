@@ -5,9 +5,6 @@ Detector 1 tiene outliers en los siguientes timestamps:
 Detector 2 tiene outliers en los siguientes timestamps:
   Timestamp: 2024-11-11 11:34:21, Counting Rate: 0.5358 cps
   Timestamp: 2024-11-11 20:30:04, Counting Rate: 0.5265 cps
-  Timestamp: 2024-11-11 23:00:05, Counting Rate: 0.5128 cps
-  Timestamp: 2024-11-12 18:00:47, Counting Rate: 0.5132 cps
-  Timestamp: 2024-11-13 19:23:55, Counting Rate: 0.5148 cps
 
 
 Detector 3 tiene outliers en los siguientes timestamps:
@@ -30,7 +27,9 @@ Detector 6 no tiene outliers.
 Detector 7 no tiene outliers.
 
 
-Detector 8 no tiene outliers.
+Detector 8 tiene outliers en los siguientes timestamps:
+  Timestamp: 2024-11-12 08:01:49, Counting Rate: 0.2891 cps
+  Timestamp: 2024-11-12 20:17:22, Counting Rate: 0.2883 cps
 
 
 Detector 9 tiene outliers en los siguientes timestamps:
@@ -40,6 +39,7 @@ Detector 9 tiene outliers en los siguientes timestamps:
 Detector 10 tiene outliers en los siguientes timestamps:
   Timestamp: 2024-11-11 07:30:54, Counting Rate: 0.3512 cps
   Timestamp: 2024-11-12 20:17:22, Counting Rate: 0.4463 cps
+  Timestamp: 2024-11-14 00:28:09, Counting Rate: 0.4387 cps
 
 
 Detector 11 no tiene outliers.
@@ -52,6 +52,7 @@ Detector 12 tiene outliers en los siguientes timestamps:
 
 Detector 13 tiene outliers en los siguientes timestamps:
   Timestamp: 2024-11-11 04:00:15, Counting Rate: 0.0312 cps
+  Timestamp: 2024-11-12 13:22:01, Counting Rate: 0.0573 cps
 
 
 Detector 14 tiene outliers en los siguientes timestamps:
@@ -66,4 +67,5 @@ Detector 16 tiene outliers en los siguientes timestamps:
   Timestamp: 2024-11-11 04:38:46, Counting Rate: 0.1389 cps
   Timestamp: 2024-11-12 12:52:04, Counting Rate: 0.1401 cps
   Timestamp: 2024-11-13 00:30:10, Counting Rate: 0.1366 cps
+  Timestamp: 2024-11-13 23:32:35, Counting Rate: 0.1808 cps
 
