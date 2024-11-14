@@ -2,7 +2,7 @@
 
 from PySide6.QtWidgets import (
     QWidget, QLabel, QPushButton, QComboBox, QVBoxLayout, QHBoxLayout,
-    QApplication, QMessageBox, QRadioButton, QCheckBox
+    QApplication, QMessageBox, QRadioButton, QCheckBox, QLineEdit, QFormLayout
 )
 from PySide6.QtCore import Qt
 import pandas as pd
@@ -77,6 +77,14 @@ class PlotCREvo(QWidget):
         accumulation_layout.addWidget(self.accumulation_time)
         self.main_layout.addLayout(accumulation_layout)
 
+        # Campos para zoom en el eje Y
+        zoom_layout = QFormLayout()
+        self.ymin_input = QLineEdit()
+        self.ymax_input = QLineEdit()
+        zoom_layout.addRow("Ajustar Zoom Y min:", self.ymin_input)
+        zoom_layout.addRow("Ajustar Zoom Y max:", self.ymax_input)
+        self.main_layout.addLayout(zoom_layout)
+
         # Botones de acción
         buttons_layout = QHBoxLayout()
         plot_button = QPushButton("Graficar selección")
@@ -103,7 +111,7 @@ class PlotCREvo(QWidget):
             QLabel {
                 font-size: 16px;
             }
-            QComboBox, QRadioButton {
+            QComboBox, QRadioButton, QLineEdit {
                 font-size: 16px;
             }
             QCheckBox {
@@ -189,10 +197,26 @@ class PlotCREvo(QWidget):
         if plt.gca().has_data():
             plt.xlabel('Tiempo')
             plt.ylabel('Average Counting Rate s$^{-1}$')
-            plt.legend()
+            plt.legend(loc='upper left')  # Mover la leyenda al costado izquierdo
             plt.title(f"Counting Rate ({data_type}) para la Campaña {self.selected_campaign_plot.currentText()} cada {accumulation_time}")
             plt.grid(True)
             plt.tight_layout()
+
+            # Aplicar zoom en el eje Y si se proporcionaron valores
+            ymin = self.ymin_input.text()
+            ymax = self.ymax_input.text()
+            if ymin and ymax:
+                try:
+                    ymin = float(ymin)
+                    ymax = float(ymax)
+                    if ymin >= ymax:
+                        QMessageBox.warning(self, "Advertencia", "Y min debe ser menor que Y max.")
+                    else:
+                        plt.ylim(ymin, ymax)
+                except ValueError:
+                    QMessageBox.warning(self, "Advertencia", "Y min y Y max deben ser números.")
+            elif ymin or ymax:
+                QMessageBox.warning(self, "Advertencia", "Debe proporcionar ambos valores: Y min y Y max.")
 
             # Mostrar el gráfico en una ventana nueva
             self.show_plot()
@@ -273,10 +297,29 @@ class PlotCREvo(QWidget):
         if data_plotted:
             plt.xlabel('Tiempo')
             plt.ylabel('Average Counting Rate s$^{-1}$')
-            plt.legend()
+            plt.legend(loc='upper left')  # Mover la leyenda al costado izquierdo
             plt.title(f"Counting Rate ({data_type}) para la Campaña {self.selected_campaign_plot.currentText()} cada {accumulation_time}")
             plt.grid(True)
             plt.tight_layout()
+
+            # Aplicar zoom en el eje Y si se proporcionaron valores
+            ymin = self.ymin_input.text()
+            ymax = self.ymax_input.text()
+            if ymin and ymax:
+                try:
+                    ymin = float(ymin)
+                    ymax = float(ymax)
+                    if ymin >= ymax:
+                        QMessageBox.warning(self, "Advertencia", "Y min debe ser menor que Y max.")
+                        return
+                    else:
+                        plt.ylim(ymin, ymax)
+                except ValueError:
+                    QMessageBox.warning(self, "Advertencia", "Y min y Y max deben ser números.")
+                    return
+            elif ymin or ymax:
+                QMessageBox.warning(self, "Advertencia", "Debe proporcionar ambos valores: Y min y Y max.")
+                return
 
             # Crear carpeta si no existe
             directory = f"./Graficos/{self.selected_campaign_plot.currentText()}"
