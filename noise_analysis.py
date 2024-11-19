@@ -67,6 +67,7 @@ class NoiseAnalysis(QWidget):
         self.accumulation_time = QComboBox()
         accumulation_times = ["15 min", "30 min", "1 h", "2 h"]
         self.accumulation_time.addItems(accumulation_times)
+        self.accumulation_time.setCurrentIndex(1)  # Establecer "30 min" por defecto
         accumulation_layout.addWidget(accumulation_label)
         accumulation_layout.addWidget(self.accumulation_time)
         self.main_layout.addLayout(accumulation_layout)
@@ -76,7 +77,7 @@ class NoiseAnalysis(QWidget):
         noise_label = QLabel("Tolerancia de incremento de ruido (%):")
         self.noise_tolerance = QSlider(Qt.Horizontal)
         self.noise_tolerance.setRange(0, 100)
-        self.noise_tolerance.setValue(10)
+        self.noise_tolerance.setValue(5)  # Establecer 5% por defecto
         self.noise_value_label = QLabel(f"{self.noise_tolerance.value()}%")
         self.noise_tolerance.valueChanged.connect(self.update_noise_label)
         noise_layout.addWidget(noise_label)
@@ -227,11 +228,11 @@ class NoiseAnalysis(QWidget):
         if data_plotted:
             plt.xlabel('Tiempo')
             plt.ylabel('Relación de Ruido (Entries / Neutron Region)')
-            plt.legend()
-            plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time}")
+            plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time} (Tolerancia: {noise_tolerance}%)")
             plt.grid(True)
+            plt.legend(loc='center right', bbox_to_anchor=(-0.15, 0.5))
+            plt.subplots_adjust(left=0.3)
             plt.tight_layout()
-
             # Mostrar la figura en una ventana nueva
             self.show_plot()
         else:
@@ -314,9 +315,10 @@ class NoiseAnalysis(QWidget):
         if data_plotted:
             plt.xlabel('Tiempo')
             plt.ylabel('Relación de Ruido (Entries / Neutron Region)')
-            plt.legend()
-            plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time}")
+            plt.title(f"Análisis de Ruido para Campaña {self.selected_campaign.currentText()} cada {accumulation_time} (Tolerancia: {noise_tolerance}%)")
             plt.grid(True)
+            plt.legend(loc='center right', bbox_to_anchor=(-0.15, 0.5))
+            plt.subplots_adjust(left=0.3)
             plt.tight_layout()
 
             directory = "./Graficos/Noise_analysis"

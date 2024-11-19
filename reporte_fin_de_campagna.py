@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QMessageBox, QTextEdit, QProgressBar, QComboBox
 )
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QPixmap
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -15,7 +14,9 @@ from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 import pandas as pd
 import os
+import re
 from datetime import datetime
+import math
 import utils  # Asegúrate de que utils.py esté en el mismo directorio o en el PYTHONPATH
 
 def add_page_number(canvas, doc):
@@ -137,7 +138,7 @@ class ReportGenerationThread(QThread):
             self.error.emit(str(e))
 
     def generar_reporte_fin_campagna(self, nombre_corto):
-        self.progress.emit(10)
+        self.progress.emit(5)
         
         # Obtener la ruta absoluta al directorio actual
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -164,6 +165,16 @@ class ReportGenerationThread(QThread):
         b_e = campaign_info.get('B_E', '')
         b_d = campaign_info.get('B_D', '')
 
+        # Cálculo de |B| [nT]
+        try:
+            b_n_val = float(b_n)
+            b_e_val = float(b_e)
+            b_d_val = float(b_d)
+            b_magnitude = math.sqrt(b_n_val**2 + b_e_val**2 + b_d_val**2)
+            b_magnitude_str = f"{b_magnitude:.2f}"
+        except (ValueError, TypeError):
+            b_magnitude_str = "No disponible"
+
         # Generar enlace a Google Maps
         if latitud and longitud:
             google_maps_link = f"https://www.google.com/maps/search/?api=1&query={latitud},{longitud}"
@@ -171,7 +182,7 @@ class ReportGenerationThread(QThread):
         else:
             mapa_html = 'No disponible'
 
-        self.progress.emit(20)
+        self.progress.emit(10)
 
         # Crear el directorio para los reportes si no existe
         report_dir = os.path.join(base_dir, "reportes_fin_de_campagna")
@@ -257,7 +268,7 @@ class ReportGenerationThread(QThread):
 
         elementos.append(PageBreak())  # Salto de página después de la portada
 
-        self.progress.emit(30)
+        self.progress.emit(15)
 
         # Capítulo 1: Información General de la Campaña
         elementos.append(Paragraph("Capítulo 1: Información General de la Campaña", styles['Capitulo']))
@@ -275,12 +286,13 @@ class ReportGenerationThread(QThread):
         <b>B_N [nT]:</b> {b_n}<br/>
         <b>B_E [nT]:</b> {b_e}<br/>
         <b>B_D [nT]:</b> {b_d}<br/>
+        <b>|B| [nT]:</b> {b_magnitude_str}<br/>
         <b>Mapa:</b> {mapa_html}
         """
         elementos.append(Paragraph(info_general, styles['Texto']))
         elementos.append(PageBreak())  # Salto de página después del capítulo
 
-        self.progress.emit(40)
+        self.progress.emit(25)
 
         # Capítulo 2: LookUpTable y Distribución de Detectores
         elementos.append(Paragraph("Capítulo 2: LookUpTable y Distribución de Detectores", styles['Capitulo']))
@@ -340,7 +352,7 @@ class ReportGenerationThread(QThread):
         else:
             elementos.append(Paragraph("No se encontró el directorio de LookUpTable.", styles['Texto']))
 
-        self.progress.emit(50)
+        self.progress.emit(35)
 
         # Agregar la imagen de distribución de detectores
         distribucion_dir = os.path.join(base_dir, "Graficos", "Lookuptable", nombre_corto)
@@ -370,7 +382,7 @@ class ReportGenerationThread(QThread):
 
         elementos.append(PageBreak())  # Salto de página después del capítulo
 
-        self.progress.emit(60)
+        self.progress.emit(45)
 
         # Capítulo 3: Incidencias
         elementos.append(Paragraph("Capítulo 3: Incidencias", styles['Capitulo']))
@@ -419,7 +431,7 @@ class ReportGenerationThread(QThread):
 
         elementos.append(PageBreak())  # Salto de página después del capítulo
 
-        self.progress.emit(70)
+        self.progress.emit(55)
 
         # Capítulo 4: Reportes de Ruido
         elementos.append(Paragraph("Capítulo 4: Reportes de Ruido", styles['Capitulo']))
@@ -443,7 +455,7 @@ class ReportGenerationThread(QThread):
 
         elementos.append(PageBreak())  # Salto de página después del capítulo
 
-        self.progress.emit(80)
+        self.progress.emit(65)
 
         # Capítulo 5: Calibraciones
         elementos.append(Paragraph("Capítulo 5: Calibraciones", styles['Capitulo']))
@@ -484,7 +496,7 @@ class ReportGenerationThread(QThread):
         else:
             elementos.append(Paragraph("No se encontró el directorio de calibraciones.", styles['Texto']))
 
-        self.progress.emit(85)
+        self.progress.emit(75)
 
         # Capítulo 6: Análisis Estadístico Descriptivo
         elementos.append(Paragraph("Capítulo 6: Análisis Estadístico Descriptivo", styles['Capitulo']))
@@ -545,17 +557,30 @@ class ReportGenerationThread(QThread):
 
         elementos.append(PageBreak())
 
-        self.progress.emit(90)
+        self.progress.emit(80)
 
         # Capítulo 7: Gráficos de Adquisición GASIFIC
         elementos.append(Paragraph("Capítulo 7: Gráficos de Adquisición GASIFIC", styles['Capitulo']))
 
         canvas_dir = os.path.join(base_dir, "Graficos", "Canvas", nombre_corto)
         if os.path.exists(canvas_dir):
-            canvas_images = sorted([f for f in os.listdir(canvas_dir) if f.endswith('.png')])
+            canvas_images = [f for f in os.listdir(canvas_dir) if f.startswith('Canvas_') and f.endswith('.png')]
             if canvas_images:
-                for image_file in canvas_images:
-                    image_path = os.path.join(canvas_dir, image_file)
+                canvas_files_by_type = {}
+                for filename in canvas_images:
+                    # Ajuste de expresión regular para coincidir con el formato 'Canvas_{hist_type}_{timestamp}.png'
+                    match = re.match(r'Canvas_(.+?)_(\d{8}_\d{4}).png', filename)
+                    if match:
+                        hist_type = match.group(1)
+                        timestamp_str = match.group(2)
+                        # Convertir el timestamp a datetime para comparación
+                        timestamp_dt = datetime.strptime(timestamp_str, '%Y%m%d_%H%M')
+                        # Si el hist_type no está en el diccionario o el timestamp es más reciente, actualizar
+                        if hist_type not in canvas_files_by_type or canvas_files_by_type[hist_type][1] < timestamp_dt:
+                            canvas_files_by_type[hist_type] = (filename, timestamp_dt)
+                # Incluir el último archivo para cada hist_type
+                for hist_type, (filename, _) in canvas_files_by_type.items():
+                    image_path = os.path.join(canvas_dir, filename)
                     # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
                     img = ImageReader(image_path)
                     original_width, original_height = img.getSize()
@@ -565,12 +590,60 @@ class ReportGenerationThread(QThread):
 
                     imagen = Image(image_path, width=scaled_width, height=scaled_height)
                     imagen.hAlign = 'CENTER'
+                    elementos.append(Paragraph(f"Histograma Tipo: {hist_type}", styles['Subtitulo']))
                     elementos.append(imagen)
                     elementos.append(Spacer(1, 12))
             else:
                 elementos.append(Paragraph("No se encontraron imágenes en la carpeta de Gráficos de Adquisición GASIFIC.", styles['Texto']))
         else:
             elementos.append(Paragraph("No se encontró el directorio de Gráficos de Adquisición GASIFIC.", styles['Texto']))
+
+        elementos.append(PageBreak())
+
+        self.progress.emit(85)
+
+        # Capítulo 8: Variables Locales
+        elementos.append(Paragraph("Capítulo 8: Variables Locales", styles['Capitulo']))
+
+        variables_dir = os.path.join(base_dir, "Graficos", "EstacionMeteorologica", nombre_corto)
+        if os.path.exists(variables_dir):
+            variable_images = [f for f in os.listdir(variables_dir) if f.endswith('.png')]
+            if variable_images:
+                variable_files_by_type = {}
+                for filename in variable_images:
+                    # Ajuste de expresión regular para coincidir con el formato '{timestamp}_{tipo}_{campaign}.png'
+                    pattern = re.escape(nombre_corto)  # Escapar caracteres especiales en el nombre de campaña
+                    match = re.match(r'(\d{8}_\d{4})_(.+?)_' + pattern + r'\.png', filename)
+                    if match:
+                        timestamp_str = match.group(1)
+                        var_type = match.group(2)
+                        # Convertir el timestamp a datetime para comparación
+                        timestamp_dt = datetime.strptime(timestamp_str, '%Y%m%d_%H%M')
+                        # Si el var_type no está en el diccionario o el timestamp es más reciente, actualizar
+                        if var_type not in variable_files_by_type or variable_files_by_type[var_type][1] < timestamp_dt:
+                            variable_files_by_type[var_type] = (filename, timestamp_dt)
+                # Incluir el último archivo para cada var_type
+                if variable_files_by_type:
+                    for var_type, (filename, _) in variable_files_by_type.items():
+                        image_path = os.path.join(variables_dir, filename)
+                        # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
+                        img = ImageReader(image_path)
+                        original_width, original_height = img.getSize()
+                        aspect = original_height / original_width
+                        scaled_width = available_width
+                        scaled_height = scaled_width * aspect
+
+                        imagen = Image(image_path, width=scaled_width, height=scaled_height)
+                        imagen.hAlign = 'CENTER'
+                        elementos.append(Paragraph(f"Variable: {var_type}", styles['Subtitulo']))
+                        elementos.append(imagen)
+                        elementos.append(Spacer(1, 12))
+                else:
+                    elementos.append(Paragraph("No se encontraron archivos de variables con el formato esperado.", styles['Texto']))
+            else:
+                elementos.append(Paragraph("No se encontraron imágenes en la carpeta de Variables Locales.", styles['Texto']))
+        else:
+            elementos.append(Paragraph("No se encontró el directorio de Variables Locales.", styles['Texto']))
 
         elementos.append(PageBreak())
 

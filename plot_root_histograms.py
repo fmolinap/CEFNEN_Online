@@ -431,8 +431,9 @@ class PlotRootHistograms(QWidget):
             return
         directory = f"./Graficos/Canvas/{self.short_name}"
         os.makedirs(directory, exist_ok=True)
-        # No incluir timestamp ni información de zoom en el nombre del archivo
-        file_name = f"Canvas_{self.hist_type}.png"
+        # Incluir el día y la hora en el nombre del archivo
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        file_name = f"Canvas_{self.hist_type}_{timestamp}.png"
         full_path = os.path.join(directory, file_name)
         self.fig.savefig(full_path)
         QMessageBox.information(self.canvas_window, "Éxito", f"Canvas guardado como {full_path}")

@@ -181,14 +181,13 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             mean = np.mean(rates)
             std = np.std(rates)
             median = np.median(rates)
-            percentile_25 = np.percentile(rates, 25)
-            percentile_75 = np.percentile(rates, 75)
+            percentile_16 = np.percentile(rates, 15.865)
+            percentile_85 = np.percentile(rates, 84.135)
+            error_positive = percentile_85 - median
+            error_negative = median - percentile_16
             report_lines.append(f"Detector {i}:")
-            report_lines.append(f"  Promedio del counting rate: {mean:.4f} cps")
-            report_lines.append(f"  Desviación estándar: {std:.4f} cps")
-            report_lines.append(f"  Mediana: {median:.4f} cps")
-            report_lines.append(f"  Percentil 25: {percentile_25:.4f} cps")
-            report_lines.append(f"  Percentil 75: {percentile_75:.4f} cps")
+            report_lines.append(f"  Promedio del counting rate: {mean:.4f} ± {std:.4f} cps")
+            report_lines.append(f"  Mediana: {median:.4f} cps (+{error_positive:.4f}, -{error_negative:.4f})")
             report_lines.append("\n")
         report_text = '\n'.join(report_lines)
         # Guardar reporte en archivo .txt
@@ -237,15 +236,15 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             mean = np.mean(rates)
             std = np.std(rates)
             median = np.median(rates)
-            percentile_25 = np.percentile(rates, 25)
-            percentile_75 = np.percentile(rates, 75)
+            percentile_16 = np.percentile(rates, 15.865)
+            percentile_85 = np.percentile(rates, 84.135)
             # Graficar líneas verticales
             ax_arr[idx].axvline(mean, color='red', linestyle='-', label='Promedio')
             ax_arr[idx].axvline(mean - std, color='green', linestyle='--', label='Desv. Estándar')
             ax_arr[idx].axvline(mean + std, color='green', linestyle='--')
             ax_arr[idx].axvline(median, color='orange', linestyle='-.', label='Mediana')
-            ax_arr[idx].axvline(percentile_25, color='purple', linestyle=':', label='Percentil 25')
-            ax_arr[idx].axvline(percentile_75, color='purple', linestyle=':')
+            ax_arr[idx].axvline(percentile_16, color='purple', linestyle=':', label='Percentil 16')
+            ax_arr[idx].axvline(percentile_85, color='purple', linestyle=':')
             ax_arr[idx].set_title(f"Detector {detector_num}")
             ax_arr[idx].set_xlabel("Counting Rate (cps)")
             ax_arr[idx].set_ylabel("Frecuencia")
@@ -260,8 +259,8 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         histogram_file = os.path.join(graphics_dir, f"Histogramas_CR_{self.short_name}.png")
         fig.savefig(histogram_file)
         QMessageBox.information(self, "Éxito", f"Histogramas guardados en {histogram_file}")
-        # Mostrar figura en un diálogo
-        self.show_figure_in_dialog(fig, "Histogramas de Counting Rates")
+        # Mostrar figura en un diálogo a pantalla completa
+        self.show_figure_in_dialog(fig, "Histogramas de Counting Rates", full_screen=True)
         # No es necesario llamar a plt.show()
     
     def plot_boxplots(self):
@@ -285,7 +284,7 @@ class AnalisisEstadisticoDescriptivo(QWidget):
             if len(rates) == 0:
                 continue
             data.append(rates)
-            labels.append(f"Detector {i}")
+            labels.append(f"Detector_{i}")
             # Identificar outliers
             q1 = np.percentile(rates, 25)
             q3 = np.percentile(rates, 75)
@@ -305,14 +304,18 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         ax.boxplot(data, labels=labels, showfliers=True)
         ax.set_title("Boxplots de Counting Rates de Neutrones por Detector")
         ax.set_ylabel("Counting Rate (cps)")
+        # Rotar etiquetas del eje X a 45 grados
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+        # Ajustar márgenes para evitar recortes de etiquetas
+        plt.tight_layout()
         # Guardar figura
         graphics_dir = f"./Graficos/AnalisisEstadisticoDescriptivo/{self.short_name}/Boxplots"
         os.makedirs(graphics_dir, exist_ok=True)
         boxplot_file = os.path.join(graphics_dir, f"BoxPlot_CR_{self.short_name}.png")
         fig.savefig(boxplot_file)
         QMessageBox.information(self, "Éxito", f"Boxplots guardados en {boxplot_file}")
-        # Mostrar figura en un diálogo
-        self.show_figure_in_dialog(fig, "Boxplots de Counting Rates")
+        # Mostrar figura en un diálogo a pantalla completa
+        self.show_figure_in_dialog(fig, "Boxplots de Counting Rates", full_screen=True)
         # No es necesario llamar a plt.show()
         # Generar reporte de outliers
         outliers_report = []
@@ -338,7 +341,7 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         # Mostrar mensaje de éxito
         QMessageBox.information(self, "Éxito", f"Análisis de outliers guardado en {outliers_file}")
     
-    def show_figure_in_dialog(self, fig, title="Figure"):
+    def show_figure_in_dialog(self, fig, title="Figure", full_screen=False):
         dialog = QDialog(self)
         dialog.setWindowTitle(title)
         layout = QVBoxLayout()
@@ -347,6 +350,10 @@ class AnalisisEstadisticoDescriptivo(QWidget):
         layout.addWidget(toolbar)
         layout.addWidget(canvas)
         dialog.setLayout(layout)
+        if full_screen:
+            dialog.showMaximized()
+        else:
+            dialog.resize(800, 600)
         dialog.exec()
         # Cerrar la figura después de mostrarla
         plt.close(fig)
