@@ -611,35 +611,28 @@ class ReportGenerationThread(QThread):
             if variable_images:
                 variable_files_by_type = {}
                 for filename in variable_images:
-                    # Ajuste de expresión regular para coincidir con el formato '{timestamp}_{tipo}_{campaign}.png'
-                    pattern = re.escape(nombre_corto)  # Escapar caracteres especiales en el nombre de campaña
-                    match = re.match(r'(\d{8}_\d{4})_(.+?)_' + pattern + r'\.png', filename)
-                    if match:
-                        timestamp_str = match.group(1)
-                        var_type = match.group(2)
-                        # Convertir el timestamp a datetime para comparación
-                        timestamp_dt = datetime.strptime(timestamp_str, '%Y%m%d_%H%M')
-                        # Si el var_type no está en el diccionario o el timestamp es más reciente, actualizar
-                        if var_type not in variable_files_by_type or variable_files_by_type[var_type][1] < timestamp_dt:
-                            variable_files_by_type[var_type] = (filename, timestamp_dt)
+                    var_type = os.path.splitext(filename)[0]  # Obtener el nombre sin extensión como tipo de variable
+                    image_path = os.path.join(variables_dir, filename)
+                    # Obtener la fecha de modificación del archivo
+                    timestamp_dt = datetime.fromtimestamp(os.path.getmtime(image_path))
+                    # Si el var_type no está en el diccionario o el timestamp es más reciente, actualizar
+                    if var_type not in variable_files_by_type or variable_files_by_type[var_type][1] < timestamp_dt:
+                        variable_files_by_type[var_type] = (filename, timestamp_dt)
                 # Incluir el último archivo para cada var_type
-                if variable_files_by_type:
-                    for var_type, (filename, _) in variable_files_by_type.items():
-                        image_path = os.path.join(variables_dir, filename)
-                        # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
-                        img = ImageReader(image_path)
-                        original_width, original_height = img.getSize()
-                        aspect = original_height / original_width
-                        scaled_width = available_width
-                        scaled_height = scaled_width * aspect
+                for var_type, (filename, _) in variable_files_by_type.items():
+                    image_path = os.path.join(variables_dir, filename)
+                    # Escalar la imagen al ancho disponible manteniendo la relación de aspecto
+                    img = ImageReader(image_path)
+                    original_width, original_height = img.getSize()
+                    aspect = original_height / original_width
+                    scaled_width = available_width
+                    scaled_height = scaled_width * aspect
 
-                        imagen = Image(image_path, width=scaled_width, height=scaled_height)
-                        imagen.hAlign = 'CENTER'
-                        elementos.append(Paragraph(f"Variable: {var_type}", styles['Subtitulo']))
-                        elementos.append(imagen)
-                        elementos.append(Spacer(1, 12))
-                else:
-                    elementos.append(Paragraph("No se encontraron archivos de variables con el formato esperado.", styles['Texto']))
+                    imagen = Image(image_path, width=scaled_width, height=scaled_height)
+                    imagen.hAlign = 'CENTER'
+                    elementos.append(Paragraph(f"Variable: {var_type}", styles['Subtitulo']))
+                    elementos.append(imagen)
+                    elementos.append(Spacer(1, 12))
             else:
                 elementos.append(Paragraph("No se encontraron imágenes en la carpeta de Variables Locales.", styles['Texto']))
         else:
