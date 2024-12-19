@@ -1,6 +1,6 @@
 # CEFNEN_Online_v1
 
-Este es el programa de análisis online de las campañas experimentales de **CEFNEN** (Centro de Estudios y Formación en Nuevas Energías Nucleares). Ha sido desarrollado en Julio de 2024 para facilitar el análisis online de los datos de la 5ta Campaña experimental.
+Este es el programa de análisis online de las campañas experimentales de **CEFNEN** (Centro de Investigación en Física Nuclear y Espectroscopia de Neutrones). Ha sido desarrollado en Julio de 2024 para facilitar el análisis online de los datos de la 5ta Campaña experimental del Proyecto FONDECYT Regular 1221364.
 
 ## Descripción
 
@@ -10,7 +10,8 @@ La aplicación está diseñada para ayudar a investigadores y técnicos en el an
 - **Realizar análisis de ruido**: Proporciona herramientas para analizar el ruido en los detectores y generar reportes.
 - **Calibrar y recalibrar detectores**: Ofrece funciones para calibrar y recalibrar los detectores utilizando archivos de datos y archivos ROOT.
 - **Gestionar campañas experimentales**: Permite al usuario crear nuevas campañas, agregar datos, configurar tablas de búsqueda y editar materiales.
-- **Generar reportes de incidencias**: Facilita el registro y seguimiento de incidencias durante las campañas.
+- **Generar reportes de incidencias en Bitacora**: Facilita el registro y seguimiento de incidencias durante las campañas.
+- **Hacer análisis Estadistico-decriptivo ** : Durante la toma de datos online sin perturbar los sistemas de adquisición de datos del espectrometro de neutrones y la estación meteorológica portatil
 
 ## Características
 
